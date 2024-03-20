@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# Shell script
+#
+
+PCT=0
+NMAX=99
+
+#-----------------------
+# Density
+#-----------------------
+
+DIR="data/dens-"
+
+CMAX=0.0006
+
+for ((  i = 0 ;  i <= $NMAX;  i++  ))
+do
+
+time=$(echo "scale=2; $i" | bc| awk '{printf "%.1f\n", $0}')
+	   
+if [ $i -lt 10 ]
+ then
+     printf "set terminal gif size 800,400; set title 't = "$time" '; unset key; set pm3d map; set cbrange [0:$CMAX]; set output\"00$i.ggif\"; sp '$DIR"00"$i.dat'" > data.gnu
+ gnuplot data.gnu 
+ else if [ $i -lt $NMAX ]
+    then
+  printf "set terminal gif size 800,400; set title 't = "$time" '; unset key; set pm3d map; set cbrange [0:$CMAX]; set output\"0$i.ggif\"; sp '$DIR"0"$i.dat'" > data.gnu
+gnuplot data.gnu
+
+  fi
+ fi
+done
+rm data.gnu
+gifsicle --delay=40 --loop *.ggif > $DIRSave"dens.gif" 2>/dev/null
+rm *.ggif
+
+
+#-----------------------
+# Phase
+#-----------------------
+
+DIR="data/phase-"
+
+for ((  i = 0 ;  i <= $NMAX;  i++  ))
+do
+
+time=$(echo "scale=2; $i" | bc| awk '{printf "%.1f\n", $0}')
+	   
+if [ $i -lt 10 ]
+ then
+     printf "set terminal gif size 800,400; set title 't = "$time" '; unset key; set pm3d map; set cbrange [0:2*pi]; set output\"00$i.ggif\"; sp '$DIR"00"$i.dat'" > data.gnu
+ gnuplot data.gnu 
+ else if [ $i -lt $NMAX ]
+    then
+  printf "set terminal gif size 800,400; set title 't = "$time" '; unset key; set pm3d map; set cbrange [0:2*pi]; set output\"0$i.ggif\"; sp '$DIR"0"$i.dat'" > data.gnu
+gnuplot data.gnu
+
+  fi
+ fi
+done
+rm data.gnu
+gifsicle --delay=40 --loop *.ggif > $DIRSave"phase.gif" 2>/dev/null
+rm *.ggif
