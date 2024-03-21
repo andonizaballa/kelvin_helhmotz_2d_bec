@@ -36,6 +36,10 @@ def make_gif():
     frame_one.save("density.gif", format="GIF", append_images=frames,
                    save_all=True, duration=150, loop=0)
     
+    # Remove the images
+    for file in file_names:
+        os.remove(file)
+    
 def plot_graph(file_name):
 
     #Open the file
@@ -64,7 +68,7 @@ def plot_graph(file_name):
     
     #Plot the graph
     plt.figure()
-    plt.scatter(density_df['x'], density_df['y'], c=density_df['density'], cmap='viridis')
+    plt.tricontourf(density_df['x'], density_df['y'], density_df['density'])
     plt.colorbar()
     plt.title(file_name)
     plt.xlabel('x')
@@ -77,8 +81,9 @@ def plot_graph(file_name):
     plt.clf() 
 
 if __name__ == '__main__':
-    #create_images()
+    create_images()
     make_gif()
+
 
     
 
