@@ -63,7 +63,6 @@ def plot_graph(file_name):
         x = float(search[0])
         y = float(search[1])
         density = float(search[2])
-
         density_df.loc[len(density_df.index)] = [x, y, density]
     
     #Plot the graph
