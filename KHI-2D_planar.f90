@@ -9,7 +9,7 @@ program main
   implicit none
   integer, parameter :: n1=128,n2=64
 !!$  integer, parameter :: n1=256,n2=128
-  !! integer, dimension(1:2) :: dim=[n1,n2]
+   integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
   complex(8), parameter :: ci=(0.d0,1.d0)
   real(8), parameter :: pi=3.141592653589793238d0
