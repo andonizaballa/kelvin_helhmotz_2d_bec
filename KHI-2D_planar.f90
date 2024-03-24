@@ -4,6 +4,11 @@
 !***
 !*** Michele Modugno & Chiara Fort, 2023 - 2024
 !*************************************************************************
+
+!*************************************************************************
+! Our aim is now to be able to modify this code with the adimensional variables
+! we defined in the theory part. 
+!*************************************************************************
 program main
   use,intrinsic :: iso_c_binding
   implicit none
