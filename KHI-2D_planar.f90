@@ -78,11 +78,16 @@ program main
 
   call system('mkdir data')
 
+  ! Create the initial state with the potential 
   call init_stat
+
+  ! write the potential in a .dat file
   call wrt_pot
 
   ! trial wave function
   forall(i1=1:n1,i2=1:n2) psi(i1,i2) = exp(-1/4.d0**2*(x1(i1)**2/10.d0**2 + x2(i2)**2/5.d0**2))
+
+  ! normalize the wave function
   call normalize(psi(:,:))
 !!$  call wrt_dat('in-')
 
@@ -145,10 +150,12 @@ contains
   subroutine init_stat
     implicit none
     real(8), dimension(2) :: dp
-
+    
+   ! Initialize the grid
     dx(:)=(xmax(:)-xmin(:))/dim(:)
     dp(:)=2.d0*pi/(xmax(:)-xmin(:))
 
+   ! Define the values for x and p in the two directions
     forall(i1=1:n1) x1(i1) = xmin(1) + (i1-1)*dx(1)
     forall(i1=1:n1/2) p1(i1) = dp(1)*(i1-1)
     forall(i1=n1/2+1:n1) p1(i1) = dp(1)*(i1-1-n1)
