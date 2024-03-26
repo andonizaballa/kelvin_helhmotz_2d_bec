@@ -7,6 +7,11 @@ import glob
 from PIL import Image
 import matplotlib.animation as animation
 
+from fig_config import (
+    add_grid,
+    figure_features,
+)  # <--- import customized functions
+
 def create_images():
     #Get the files
     files = glob.glob('dens-*.dat')
@@ -41,6 +46,7 @@ def make_gif():
         os.remove(file)
     
 def plot_graph(file_name):
+    figure_features()
 
     #Open the file
     input_file = open(file_name)
@@ -67,11 +73,11 @@ def plot_graph(file_name):
     
     #Plot the graph
     plt.figure()
-    plt.tricontourf(density_df['x'], density_df['y'], density_df['density'])
+    plt.scatter(density_df['x'], density_df['y'], c = density_df['density'], vmin = 0, vmax = 0.06e-2, cmap = 'plasma')
     plt.colorbar()
     plt.title(file_name)
-    plt.xlabel('x')
-    plt.ylabel('y')
+    plt.xlabel('$x$')
+    plt.ylabel('$y$')
     plt.savefig(file_name + '.png')
 
     plt.figure().clear()
