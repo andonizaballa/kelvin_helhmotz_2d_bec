@@ -6,14 +6,15 @@
 !*************************************************************************
 
 !*************************************************************************
-! Our aim is now to be able to modify this code with the adimensional variables
-! we defined in the theory part. 
+!* Our aim is now to be able to modify this code with the adimensional variables
+! *we defined in the theory part. 
 !*************************************************************************
 program main
   use,intrinsic :: iso_c_binding
   implicit none
-  !!integer, parameter :: n1=128,n2=64
-  integer, parameter :: n1=256,n2=128
+  integer, parameter :: n1=128,n2=64
+  !!integer, parameter :: n1=64,n2=32
+  !!integer, parameter :: n1=256,n2=128
    integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
   complex(8), parameter :: ci=(0.d0,1.d0)
@@ -24,16 +25,13 @@ program main
   real(8), parameter :: m=12.d0*amu                  ! Kg
   real(8), parameter :: l0=1.d-6                     ! to express coordinates in micron
   real(8), parameter :: e0=hbar**2.d0/(m*l0**2.d0)   ! energy scale (ho correspondence)
-  real(8), parameter :: ascat = 1010.0d0*a_bohr/l0 
-  real(8), parameter :: nat = 1.d3 
-  real(8), parameter :: u = 4.d0*pi*nat*ascat
+  real(8), parameter :: u = 1   ! Adimensional interaction
   !grid
-  real(8), parameter, dimension(2) :: xmax=[40.d0,20.d0]
+  real(8), parameter, dimension(2) :: xmax=[30.d0,20.d0]
   real(8), parameter, dimension(2) :: xmin=-xmax
   ! waveguide
-  real(8), parameter :: A=2*pi*4100*hbar/e0         ! barrier amplitude
-  real(8), parameter :: sigma=1.0                   ! barrier width
-  real(8), parameter :: B=2.d0*pi*5000*hbar/e0      ! external barrier for the waveguide
+  real(8), parameter :: A=5                         ! barrier amplitude
+  real(8), parameter :: B=5                         ! external barrier for the waveguide
   real(8), parameter :: w=1.d0                      ! waveguide stiffness
   real(8), parameter :: r2=xmax(2)-2.d0             ! transverse width of the waveguide
   ! vortices
@@ -59,7 +57,7 @@ program main
   complex(8), dimension(n1,n2) :: psi
   complex(8), dimension(n1,n2) :: in,out
   real(8), dimension(n1,n2) :: uext,uWAVEGUIDE,uBARRIER
-  real(8), dimension(n1,n2) :: psq
+  real(8), dimension(n1,n2) :: psq, pvec
   real(8), dimension(n1) :: x1,p1
   real(8), dimension(n2) :: x2,p2
   real(8), dimension(2) :: dx
@@ -164,13 +162,15 @@ contains
     forall(i2=1:n2/2) p2(i2) = dp(2)*(i2-1)
     forall(i2=n2/2+1:n2) p2(i2) = dp(2)*(i2-1-n2)
 
+   ! Create the p vectroa nd the p^2 vector
+    forall(i1=1:n1,i2=1:n2) pvec(i1,i2) = sqrt(p1(i1)**2 + p2(i2)**2)
     forall(i1=1:n1,i2=1:n2) psq(i1,i2) = p1(i1)**2 + p2(i2)**2
 
     ! waveguide
     forall(i1=1:n1,i2=1:n2) uWAVEGUIDE(i1,i2) = B*(Tanh((x2(i2)-r2)/w)+1) + B*(Tanh((-r2-x2(i2))/w)+1)
 
     ! barrier
-    forall(i1=1:n1,i2=1:n2) uBARRIER(i1,i2) = A*EXP(-(x2(i2))**2/(2.d0*sigma**2))
+    forall(i1=1:n1,i2=1:n2) uBARRIER(i1,i2) = A*EXP(-(x2(i2))**2/(2.d0))
 
     ! total potential
     uext(:,:) = uWAVEGUIDE(:,:) + (1.d0 - factor)*uBARRIER(:,:)
@@ -459,6 +459,17 @@ contains
 
   end subroutine normalize
 
+  subroutine derivativepsi(psi,dpsi)
+     implicit none
+     complex(8), dimension(n1,n2) :: psi,dpsi
+   
+   in = psi(:,:)
+   call fft_transform(forth)
+   in = pvec*out
+   call fft_transform(back)
+   dpsi = out
+
+   end subroutine derivativepsi
 
   ! adds opposite phases in the two channels
   subroutine adding_phase
@@ -483,7 +494,8 @@ contains
   subroutine wrt_dat(number)
     implicit none
     character(3) :: number
-    real(8) :: phase
+    real(8), dimension(n1,n2) :: phase, velocity_x_1, velocity_y_1, velocity_2
+    complex(8), dimension(n1,n2) :: dpsi
     real(8) :: maxpsi
 
     ! density
@@ -502,24 +514,53 @@ contains
     maxpsi = maxval(abs(psi))
     do i1 = 1, n1
        do i2 = 1, n2
-          phase = atan(dimag(psi(i1,i2))/real(psi(i1,i2)))
+          phase(i1,i2) = atan(dimag(psi(i1,i2))/real(psi(i1,i2)))
           if(real(psi(i1,i2)).ge.0) then
-             phase = phase
+             phase(i1,i2) = phase(i1,i2)
           else
-             phase = phase + pi
+             phase(i1,i2) = phase(i1,i2) + pi
           end if
-          if (phase.lt.0.d0) then
-             phase = phase + 2.d0*pi
+          if (phase(i1,i2).lt.0.d0) then
+             phase(i1,i2) = phase(i1,i2) + 2.d0*pi
           end if
           if(abs(psi(i1,i2)).lt.0.02d0*maxpsi) then
-             phase=0.d0
+             phase(i1,i2)=0.d0
           end if
-          write(24,'(2(2x,f10.4),2x,g16.4E3)') x1(i1), x2(i2), phase
+          write(24,'(2(2x,f10.4),2x,g16.4E3)') x1(i1), x2(i2), phase(i1,i2)
        end do
        write(24,*)
     end do
     close(24)
 
+
+   ! Velocity 1 
+
+   open(UNIT=25,FILE="data/vel1-"//number//".dat",STATUS='unknown')
+
+   do i1 = 2, n1-1
+      do i2 = 2, n2-1
+         velocity_x_1(i1,i2) = hbar/m * (phase(i1+1,i2)-phase(i1-1,i2))/(2.d0*dx(1))
+         velocity_y_1(i1,i2) = hbar/m * (phase(i1,i2+1)-phase(i1,i2-1))/(2.d0*dx(2))
+         write(25,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_1(i1,i2), velocity_y_1(i1,i2)
+      end do
+      write(25,*)
+   end do 
+
+   ! Velocity 2
+
+   open(UNIT=26,FILE="data/vel2-"//number//".dat",STATUS='unknown')
+
+      do i1 = 2, n1-1
+      do i2 = 2, n2-1
+         call derivativepsi(psi,dpsi)
+         velocity_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dpsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
+         write(26,'(2(2x,f10.4),2x,g16.4E3)') x1(i1), x2(i2), velocity_2(i1,i2)
+      end do
+      write(26,*)
+   end do 
+
+   close(26)
+   
     ! FT along the longitudinal and transverse direction
     in = psi
     call fft_transform(forth)
@@ -533,6 +574,7 @@ contains
        write(42,'(2(2x,f10.4),2x,g16.4E3)') t, p2(i2), sum(abs(out(:,i2))**2.)
     end do
     write(42,*)
+
 
   end subroutine wrt_dat
 
@@ -553,6 +595,21 @@ contains
     close(23)
 
   end subroutine wrt_pot
+
+  subroutine stability(psi)
+      implicit none
+      complex(8), dimension(n1,n2) :: psi, fpsi
+      real(8) :: norme2
+   
+      in = psi 
+      call fft_transform(forth)
+      fpsi = out 
+      
+      ! Now we can do the integral over py 
+      norme2 = product(dx)*sum(abs(fpsi(:,:))**2)
+
+
+  end subroutine stability
 
 end program main
 

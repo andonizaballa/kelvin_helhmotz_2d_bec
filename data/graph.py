@@ -14,11 +14,19 @@ from fig_config import (
 
 def create_images():
     #Get the files
-    files = glob.glob('dens-*.dat')
-    os.makedirs('images', exist_ok=True)
-    for file in files:
-        print(file)
-        plot_graph(file)
+    dens_files = glob.glob('dens-*.dat')
+    phase_file = glob.glob('phase-*.dat')
+    vel_files = glob.glob('vel1-*.dat')
+    os.makedirs('images', exist_ok=True) 
+    #for file in dens_files:
+        #plot_graph(file)
+    
+    #for file in phase_file:
+        #plot_graph(file)
+    
+    for file in vel_files:
+       plot_graph(file)
+
 
 
 
@@ -31,18 +39,39 @@ def extract_number(filename):
         return -1  # Return -1 if no number found
 
 def make_gif():
+    #Remove the files with no numbers in the file
+
     # Get the list of filenames matching the pattern sorted numerically
-    file_names = sorted(glob.glob("dens-*.dat.png"), key=extract_number)
+    dens_file_names = sorted(glob.glob("dens-*.dat.png"), key=extract_number)
+    phase_file_names = sorted(glob.glob("phase-*.dat.png"), key=extract_number)
+    vel_file_names = sorted(glob.glob("vel1-*.dat.png"), key=extract_number)
     
     # Open images in sorted order
-    frames = [Image.open(image) for image in file_names]
+    dens_frames = [Image.open(image) for image in dens_file_names]
+    phase_frames = [Image.open(image) for image in phase_file_names]
+    vel_frames = [Image.open(image) for image in vel_file_names]
 
-    frame_one = frames[0]
-    frame_one.save("density.gif", format="GIF", append_images=frames,
+    print(vel_frames)
+
+    frame_one = dens_frames[0]
+    frame_one.save("density.gif", format="GIF", append_images=dens_frames, save_all=True, duration=150, loop=0)
+    
+    frame_one = phase_frames[0]
+    frame_one.save("phase.gif", format="GIF", append_images=phase_frames, save_all=True, duration=150, loop=0)
+    
+    frame_one = vel_frames[0]
+    frame_one.save("velocity.gif", format="GIF", append_images=vel_frames,
                    save_all=True, duration=150, loop=0)
     
+    
     # Remove the images
-    for file in file_names:
+    for file in dens_file_names:
+        os.remove(file)
+
+    for file in phase_file_names:
+        os.remove(file)
+
+    for file in vel_file_names:
         os.remove(file)
     
 def plot_graph(file_name):
@@ -73,7 +102,7 @@ def plot_graph(file_name):
     
     #Plot the graph
     plt.figure()
-    plt.scatter(density_df['x'], density_df['y'], c = density_df['density'], vmin = 0, vmax = 0.06e-2, cmap = 'plasma')
+    plt.scatter(density_df['x'], density_df['y'], c = density_df['density'], vmin = 0, cmap = 'plasma')
     plt.colorbar()
     plt.title(file_name)
     plt.xlabel('$x$')
@@ -85,9 +114,41 @@ def plot_graph(file_name):
     plt.cla()
     plt.clf() 
 
+def plot_velocity(file):
+
+    figure_features()
+
+    x , y , vx  = np.loadtxt(file, unpack=True)
+
+    # We want to plot y versus vx for a given value of x 
+
+    for xnum in x:
+        # Get the index of the x value
+        
+        if xnum == 17.8125 :
+            index = np.where(x == xnum)
+            xlabel = xnum
+            
+    plt.plot(y[index], vx[index], label = 'x = ' + str(xlabel))
+
+
+    plt.ylabel('$v_x$')
+    plt.xlabel('$ y $')
+    plt.legend()
+    plt.title('Velocity in x direction vs y')
+    plt.savefig('velocity.png')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+
+
+
 if __name__ == '__main__':
-    create_images()
-    make_gif()
+    #create_images()
+    #make_gif()
+
+    plot_velocity('vel2-053.dat')
 
 
     
