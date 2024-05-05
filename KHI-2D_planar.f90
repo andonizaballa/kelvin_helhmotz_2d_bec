@@ -17,7 +17,7 @@ program main
   !!integer, parameter :: n1=256,n2=128
    integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
-  complex(8), parameter :: ci=(0.d0,1.d0)
+   complex(8), parameter :: ci=(0.d0,1.d0)
   real(8), parameter :: pi=3.141592653589793238d0
   real(8), parameter :: hbar=1.054572d-34            ! J*s
   real(8), parameter :: amu=1.66053873d-27           ! Kg (atomic mass unit)
@@ -25,6 +25,9 @@ program main
   real(8), parameter :: m=12.d0*amu                  ! Kg
   real(8), parameter :: l0=1.d-6                     ! to express coordinates in micron
   real(8), parameter :: e0=hbar**2.d0/(m*l0**2.d0)   ! energy scale (ho correspondence)
+  real(8), parameter :: ascat = 1010.0d0*a_bohr/l0 
+  real(8), parameter :: nat = 1.d3 
+  !real(8), parameter :: u = 4.d0*pi*nat*ascat
   real(8), parameter :: u = 1   ! Adimensional interaction
   !grid
   real(8), parameter, dimension(2) :: xmax=[30.d0,20.d0]
@@ -45,7 +48,7 @@ program main
   integer, parameter :: shots=nint(t_evol)          ! saves every ms
   integer, parameter :: kmax=t_evol/dt
   real(8), parameter :: dwt=dt*1.d-3*e0/hbar
-  real(8), parameter :: t0 = 25.d0                  ! switch-off time of teh barrier
+  real(8), parameter :: t0 = 15.d0                  ! switch-off time of teh barrier
   real(8) :: t,factor
   !
   include 'fftw3.f03'
@@ -459,17 +462,29 @@ contains
 
   end subroutine normalize
 
-  subroutine derivativepsi(psi,dpsi)
+  subroutine derivative_x_psi(psi,dpsi)
      implicit none
      complex(8), dimension(n1,n2) :: psi,dpsi
    
    in = psi(:,:)
    call fft_transform(forth)
-   in = pvec*out
+   in = p1*out
    call fft_transform(back)
    dpsi = out
 
-   end subroutine derivativepsi
+   end subroutine derivative_x_psi
+
+   subroutine derivative_y_psi(psi,dpsi)
+   implicit none
+   complex(8), dimension(n1,n2) :: psi,dpsi
+   
+   in = psi(:,:)
+   call fft_transform(forth)
+   in = p2*out
+   call fft_transform(back)
+   dpsi = out
+
+   end subroutine derivative_y_psi
 
   ! adds opposite phases in the two channels
   subroutine adding_phase
@@ -494,8 +509,8 @@ contains
   subroutine wrt_dat(number)
     implicit none
     character(3) :: number
-    real(8), dimension(n1,n2) :: phase, velocity_x_1, velocity_y_1, velocity_2
-    complex(8), dimension(n1,n2) :: dpsi
+    real(8), dimension(n1,n2) :: phase, velocity_x_1, velocity_y_1, velocity_x_2, velocity_y_2, velocity_x_3, velocity_y_3
+    complex(8), dimension(n1,n2) :: dxpsi, dypsi, phasevec
     real(8) :: maxpsi
 
     ! density
@@ -546,20 +561,44 @@ contains
       write(25,*)
    end do 
 
+   close(25)
+
    ! Velocity 2
 
    open(UNIT=26,FILE="data/vel2-"//number//".dat",STATUS='unknown')
 
       do i1 = 2, n1-1
       do i2 = 2, n2-1
-         call derivativepsi(psi,dpsi)
-         velocity_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dpsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
-         write(26,'(2(2x,f10.4),2x,g16.4E3)') x1(i1), x2(i2), velocity_2(i1,i2)
+         call derivativepsi(psi,dxpsi)
+         call derivativepsi(psi,dypsi)
+         velocity_x_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dxpsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
+         velocity_y_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dypsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
+         write(26,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_2(i1,i2), velocity_y_2(i1,i2)
       end do
       write(26,*)
    end do 
 
    close(26)
+
+   ! Velocity 3 
+
+   open(UNIT=27,FILE="data/vel3-"//number//".dat",STATUS='unknown')
+
+   phasevec = atan(dimag(psi)/real(psi))
+
+   do i1 = 2, n1-1
+      do i2 = 2, n2-1
+         call derivative_x_psi(phasevec,dxpsi)
+         call derivative_y_psi(phasevec,dypsi)
+         velocity_x_3(i1,i2) = hbar/m * dxpsi(i1,i2)
+         velocity_y_3(i1,i2) = hbar/m * dypsi(i1,i2) 
+         write(27,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_3(i1,i2), velocity_y_3(i1,i2)
+      end do
+      write(27,*)
+   end do
+
+   close(27)
+
    
     ! FT along the longitudinal and transverse direction
     in = psi
