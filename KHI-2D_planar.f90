@@ -78,6 +78,15 @@ program main
   call dfftw_plan_dft_2d(plan_b,n1,n2,in,out,1,FFTW_MEASURE)
 
   call system('mkdir data')
+  call system('mkdir data/density')
+   call system('mkdir data/phase')
+   call system('mkdir data/vel1')
+   call system('mkdir data/vel2')
+   call system('mkdir data/vel3')
+   call system('mkdir data/FT-x')
+   call system('mkdir data/FT-y')
+
+
 
   ! Create the initial state with the potential 
   call init_stat
@@ -462,29 +471,29 @@ contains
 
   end subroutine normalize
 
-  subroutine derivative_x_psi(psi,dpsi)
+  subroutine derivativexpsi(psi,dpsi)
      implicit none
      complex(8), dimension(n1,n2) :: psi,dpsi
    
    in = psi(:,:)
    call fft_transform(forth)
-   in = p1*out
+   forall(i1=1:n1, i2=1:n2) in = p1(i1)*out(i1,i2)
    call fft_transform(back)
    dpsi = out
 
-   end subroutine derivative_x_psi
+   end subroutine derivativexpsi
 
-   subroutine derivative_y_psi(psi,dpsi)
+   subroutine derivativeypsi(psi,dpsi)
    implicit none
    complex(8), dimension(n1,n2) :: psi,dpsi
    
    in = psi(:,:)
    call fft_transform(forth)
-   in = p2*out
+   forall(i1=1:n1, i2=1:n2) in = p2(i2)*out(i1,i2)
    call fft_transform(back)
    dpsi = out
 
-   end subroutine derivative_y_psi
+   end subroutine derivativeypsi
 
   ! adds opposite phases in the two channels
   subroutine adding_phase
@@ -510,11 +519,13 @@ contains
     implicit none
     character(3) :: number
     real(8), dimension(n1,n2) :: phase, velocity_x_1, velocity_y_1, velocity_x_2, velocity_y_2, velocity_x_3, velocity_y_3
-    complex(8), dimension(n1,n2) :: dxpsi, dypsi, phasevec
+    complex(8), dimension(:,:) , allocatable :: dxpsi, dypsi, phasevec
     real(8) :: maxpsi
 
+   allocate(dxpsi(n1,n2),dypsi(n1,n2),phasevec(n1,n2))
+
     ! density
-    open(UNIT=23,FILE="data/dens-"//number//".dat",STATUS='unknown')
+    open(UNIT=23,FILE="data/density/dens-"//number//".dat",STATUS='unknown')
     do i1 =1, n1
        do i2 = 1, n2
           write(23,'(2(2x,f10.4),2x,g16.4E3)') x1(i1), x2(i2), abs(psi(i1,i2))**2.
@@ -524,7 +535,7 @@ contains
     close(23)
 
     ! phase
-    open(UNIT=24,FILE="data/phase-"//number//".dat",STATUS='unknown')
+    open(UNIT=24,FILE="data/phase/phase-"//number//".dat",STATUS='unknown')
     
     maxpsi = maxval(abs(psi))
     do i1 = 1, n1
@@ -550,7 +561,7 @@ contains
 
    ! Velocity 1 
 
-   open(UNIT=25,FILE="data/vel1-"//number//".dat",STATUS='unknown')
+   open(UNIT=25,FILE="data/vel1/vel1-"//number//".dat",STATUS='unknown')
 
    do i1 = 2, n1-1
       do i2 = 2, n2-1
@@ -565,12 +576,14 @@ contains
 
    ! Velocity 2
 
-   open(UNIT=26,FILE="data/vel2-"//number//".dat",STATUS='unknown')
+   open(UNIT=26,FILE="data/vel2/vel2-"//number//".dat",STATUS='unknown')
 
-      do i1 = 2, n1-1
-      do i2 = 2, n2-1
-         call derivativepsi(psi,dxpsi)
-         call derivativepsi(psi,dypsi)
+   call derivativexpsi(psi,dxpsi)
+   call derivativeypsi(psi,dypsi)
+
+   do i1 = 1, n1
+      do i2 = 1, n2
+
          velocity_x_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dxpsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
          velocity_y_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dypsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
          write(26,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_2(i1,i2), velocity_y_2(i1,i2)
@@ -582,14 +595,15 @@ contains
 
    ! Velocity 3 
 
-   open(UNIT=27,FILE="data/vel3-"//number//".dat",STATUS='unknown')
+   open(UNIT=27,FILE="data/vel3/vel3-"//number//".dat",STATUS='unknown')
 
    phasevec = atan(dimag(psi)/real(psi))
+   call derivativexpsi(phasevec,dxpsi)
+   call derivativeypsi(phasevec,dypsi)
 
-   do i1 = 2, n1-1
-      do i2 = 2, n2-1
-         call derivative_x_psi(phasevec,dxpsi)
-         call derivative_y_psi(phasevec,dypsi)
+   do i1 = 1, n1
+      do i2 = 1, n2
+
          velocity_x_3(i1,i2) = hbar/m * dxpsi(i1,i2)
          velocity_y_3(i1,i2) = hbar/m * dypsi(i1,i2) 
          write(27,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_3(i1,i2), velocity_y_3(i1,i2)
@@ -599,6 +613,8 @@ contains
 
    close(27)
 
+   open(unit=43,file="data/FT-x/FT-x-"//number//".dat",status='unknown')
+   open(unit=44,file="data/FT-y/FT-y-"//number//".dat",status='unknown')
    
     ! FT along the longitudinal and transverse direction
     in = psi
@@ -606,11 +622,13 @@ contains
     
     do i1 =1, n1
        write(41,'(2(2x,f10.4),2x,g16.4E3)') t, p1(i1), sum(abs(out(i1,:))**2.)
+       write(43,'(2(2x,f10.4),2x,g16.4E3)') t, p1(i1), sum(abs(out(i1,:))**2.)
     end do
     write(41,*)
 
      do i2 =1, n2
        write(42,'(2(2x,f10.4),2x,g16.4E3)') t, p2(i2), sum(abs(out(:,i2))**2.)
+       write(44,'(2(2x,f10.4),2x,g16.4E3)') t, p2(i2), sum(abs(out(:,i2))**2.)
     end do
     write(42,*)
 
@@ -635,20 +653,6 @@ contains
 
   end subroutine wrt_pot
 
-  subroutine stability(psi)
-      implicit none
-      complex(8), dimension(n1,n2) :: psi, fpsi
-      real(8) :: norme2
-   
-      in = psi 
-      call fft_transform(forth)
-      fpsi = out 
-      
-      ! Now we can do the integral over py 
-      norme2 = product(dx)*sum(abs(fpsi(:,:))**2)
-
-
-  end subroutine stability
 
 end program main
 
