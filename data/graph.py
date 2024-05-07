@@ -14,15 +14,15 @@ from fig_config import (
 
 def create_images():
     #Get the files
-    dens_files = glob.glob('dens-*.dat')
-    phase_file = glob.glob('phase-*.dat')
-    vel_files = glob.glob('vel1-*.dat')
+    dens_files = glob.glob('density/dens-*.dat')
+    phase_file = glob.glob('phase/phase-*.dat')
+    vel_files = glob.glob('vel1/vel1-*.dat')
     os.makedirs('images', exist_ok=True) 
-    #for file in dens_files:
-        #plot_graph(file)
+    for file in dens_files:
+        plot_graph(file)
     
-    #for file in phase_file:
-        #plot_graph(file)
+    for file in phase_file:
+        plot_graph(file)
     
     for file in vel_files:
        plot_graph(file)
@@ -42,9 +42,9 @@ def make_gif():
     #Remove the files with no numbers in the file
 
     # Get the list of filenames matching the pattern sorted numerically
-    dens_file_names = sorted(glob.glob("dens-*.dat.png"), key=extract_number)
-    phase_file_names = sorted(glob.glob("phase-*.dat.png"), key=extract_number)
-    vel_file_names = sorted(glob.glob("vel1-*.dat.png"), key=extract_number)
+    dens_file_names = sorted(glob.glob("density/dens-*.dat.png"), key=extract_number)
+    phase_file_names = sorted(glob.glob("phase/phase-*.dat.png"), key=extract_number)
+    vel_file_names = sorted(glob.glob("vel1/vel1-*.dat.png"), key=extract_number)
     
     # Open images in sorted order
     dens_frames = [Image.open(image) for image in dens_file_names]
@@ -78,36 +78,16 @@ def plot_graph(file_name):
     figure_features()
 
     #Open the file
-    input_file = open(file_name)
-
-    lines = input_file.readlines()
-
-    #Create a dataframe
-    column_names = ['x', 'y', 'density']
-
-    density_df = pd.DataFrame(columns=column_names)
-
-    for line in lines:
-        #Search for the values
-
-        search = re.findall(r'[-+]?\d*\.\d+(?:E[-+]?\d+)?', line)
-                            
-        if re.search(r'[-+]?\d*\.\d+(?:E[-+]?\d+)?', line) is None:
-            continue
-
-        x = float(search[0])
-        y = float(search[1])
-        density = float(search[2])
-        density_df.loc[len(density_df.index)] = [x, y, density]
+    x , y , density  = np.loadtxt(file_name, unpack=True)
     
     #Plot the graph
     plt.figure()
-    plt.scatter(density_df['x'], density_df['y'], c = density_df['density'], vmin = 0, cmap = 'plasma')
+    plt.plot(x, y, c = density, vmin = 0, cmap = 'plasma', marker = 'o')
     plt.colorbar()
     plt.title(file_name)
     plt.xlabel('$x$')
     plt.ylabel('$y$')
-    plt.savefig(file_name + '.png')
+    plt.savefig('images/'+ file_name + '.png')
 
     plt.figure().clear()
     plt.close()
@@ -142,13 +122,69 @@ def plot_velocity(file):
     plt.cla()
     plt.clf()
 
+def instablity_regime_df():
+
+    os.chdir('FT-x')
+
+    #Retrieve the data from FT-x
+    ft_file_names = sorted(glob.glob("FT-x*.dat"), key=extract_number)
+
+
+
+    # List to store vectors for each column
+    column_names = ['t', 'px', 'psi_px']
+
+    instablity_regime_df = pd.DataFrame(columns=column_names)
+
+    for file in ft_file_names:
+        input_file = open(file)
+
+        lines = input_file.readlines()
+
+        for line in lines:
+            #Search for the values
+
+            values = line.split()
+            t = float(values[0])
+            px = float(values[1])
+            psi_px = float(values[2])
+            instablity_regime_df.loc[len(instablity_regime_df.index)] = [t, px, psi_px]
+
+    os.chdir('..')
+    #Save the dataframe as a csv file
+
+    instablity_regime_df.to_csv('instability_regime.csv')
+
+def plot_instability_regime():
+
+    # Read the csv file
+    instablity_regime_df = pd.read_csv('instability_regime.csv')
+
+    #Plot the graph
+    figure_features()
+    plt.scatter(instablity_regime_df['t'], np.log(abs(instablity_regime_df['psi_px'])**2), c = instablity_regime_df['px'] ,label = 'FT-x',s = 0.5,cmap = 'tab20c')
+ 
+    plt.xlabel('Time ($t$)')
+    plt.ylabel(r'$\tilde{n} (p_x) $') 
+    cbar = plt.colorbar()
+    cbar.set_label('$p_x$')
+    plt.legend(loc = 'upper right')
+    plt.title('Dynamical (modulational) instability (FT-x)')
+    plt.savefig('instability_regime.png')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+
+
 
 
 if __name__ == '__main__':
     #create_images()
     #make_gif()
 
-    plot_velocity('vel2-053.dat')
+    #instablity_regime_df()
+    plot_instability_regime()
 
 
     

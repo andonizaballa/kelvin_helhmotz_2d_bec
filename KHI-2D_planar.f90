@@ -12,9 +12,7 @@
 program main
   use,intrinsic :: iso_c_binding
   implicit none
-  integer, parameter :: n1=128,n2=64
-  !!integer, parameter :: n1=64,n2=32
-  !!integer, parameter :: n1=256,n2=128
+  integer, parameter :: n1=64,n2=32
    integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
    complex(8), parameter :: ci=(0.d0,1.d0)
@@ -96,7 +94,6 @@ program main
 
   ! trial wave function
   forall(i1=1:n1,i2=1:n2) psi(i1,i2) = exp(-1/4.d0**2*(x1(i1)**2/10.d0**2 + x2(i2)**2/5.d0**2))
-
   ! normalize the wave function
   call normalize(psi(:,:))
 !!$  call wrt_dat('in-')
@@ -117,6 +114,8 @@ program main
   open(UNIT=16,FILE='data/xmean.dat',STATUS='unknown')
   open(UNIT=41,FILE='data/ft_x.dat',STATUS='unknown')
   open(UNIT=42,FILE='data/ft_y.dat',STATUS='unknown')
+
+  write(*,*) n1, n2
 
   t=0.d0
   do iter = 0,kmax
@@ -580,6 +579,7 @@ contains
 
    call derivativexpsi(psi,dxpsi)
    call derivativeypsi(psi,dypsi)
+
 
    do i1 = 1, n1
       do i2 = 1, n2
