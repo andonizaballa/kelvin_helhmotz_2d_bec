@@ -12,24 +12,47 @@ from fig_config import (
     figure_features,
 )  # <--- import customized functions
 
-def create_images():
-    #Get the files
-    dens_files = glob.glob('density/dens-*.dat')
-    phase_file = glob.glob('phase/phase-*.dat')
-    vel1_files = glob.glob('vel1/vel1-*.dat')
-    vel2_files = glob.glob('vel2/vel2-*.dat')
-    os.makedirs('images', exist_ok=True) 
-    for file in dens_files:
-        plot_graph(file)
-    
-    for file in phase_file:
-        plot_graph(file)
-    
-    for file in vel1_files:
-       plot_graph(file)
+def main():
 
-    for file in vel2_files:
-        plot_graph(file)
+    #Create the images for density, phase, vel1 and vel2
+    create_images('dens')
+    create_images('phase')
+    create_images('vel1')
+    create_images('vel2')
+
+    #Create the gif for density, phase, vel1 and vel2
+    make_gif('dens')
+    make_gif('phase')
+    make_gif('vel1')
+    make_gif('vel2')
+
+def create_images(folder_name):
+
+    dict_folder = {'dens': 'density', 'phase': 'phase', 'vel1': 'vel1', 'vel2': 'vel2'}
+
+    dict_max = {'dens': 7E-4, 'phase': 2*np.pi, 'vel1': 1, 'vel2': 1}
+
+    max = dict_max[folder_name]
+
+    #Get the files
+
+    os.chdir(dict_folder[folder_name])
+
+    files = sorted(glob.glob(folder_name + "-*.dat"), key=extract_number)
+
+    os.makedirs('images', exist_ok=True)
+
+    #If folder is density or phase
+
+    if folder_name == 'dens' or folder_name == 'phase':
+        for file in files:
+            plot_graph_dens(file,max) 
+    else: 
+        for file in files:
+            plot_graph_vel(file,max)
+
+    os.chdir('..')
+    
 
 
 
@@ -42,53 +65,32 @@ def extract_number(filename):
     else:
         return -1  # Return -1 if no number found
 
-def make_gif():
-    #Remove the files with no numbers in the file
+def make_gif(folder_name):
+    dict_folder = {'dens': 'density', 'phase': 'phase', 'vel1': 'vel1', 'vel2': 'vel2'}
+
+    os.chdir(dict_folder[folder_name])
 
     # Get the list of filenames matching the pattern sorted numerically
-    dens_file_names = sorted(glob.glob("density/dens-*.dat.png"), key=extract_number)
-    phase_file_names = sorted(glob.glob("phase/phase-*.dat.png"), key=extract_number)
-    vel1_file_names = sorted(glob.glob("vel1/vel1-*.dat.png"), key=extract_number)
-    vel2_file_names = sorted(glob.glob("vel2/vel2-*.dat.png"), key=extract_number)
+    file_names = sorted(glob.glob(folder_name + "-*.dat.png"), key=extract_number)
+
     
     # Open images in sorted order
-    dens_frames = [Image.open(image) for image in dens_file_names]
-    phase_frames = [Image.open(image) for image in phase_file_names]
-    vel1_frames = [Image.open(image) for image in vel_file_names]
-    vel2_frames = [Image.open(image) for image in vel_file_names]
+    frames = [Image.open(image) for image in file_names]
 
 
-    print(vel_frames)
 
-    frame_one = dens_frames[0]
-    frame_one.save("density.gif", format="GIF", append_images=dens_frames, save_all=True, duration=150, loop=0)
+
+    frame_one = frames[0]
+    frame_one.save(folder_name  + ".gif", format="GIF", append_images=frames, save_all=True, duration=150, loop=0)
     
-    frame_one = phase_frames[0]
-    frame_one.save("phase.gif", format="GIF", append_images=phase_frames, save_all=True, duration=150, loop=0)
-    
-    frame_one = vel1_frames[0]
-    frame_one.save("velocity1.gif", format="GIF", append_images=vel1_frames,
-                   save_all=True, duration=150, loop=0)
-    
-    frame_one = vel2_frames[0]
-    frame_one.save("velocity2.gif", format="GIF", append_images=vel2_frames,
-                   save_all=True, duration=150, loop=0)
     
     
     # Remove the images
-    for file in dens_file_names:
+    for file in file_names:
         os.remove(file)
-
-    for file in phase_file_names:
-        os.remove(file)
-
-    for file in vel1_file_names:
-        os.remove(file)
-
-    for file in vel2_file_names:
-        os.remove(file)
+    os.chdir('..')
     
-def plot_graph(file_name):
+def plot_graph_dens(file_name,max):
     figure_features()
 
     #Open the file
@@ -96,18 +98,37 @@ def plot_graph(file_name):
     
     #Plot the graph
     plt.figure()
-    plt.scatter(x, y, c = density, vmin = 0, cmap = 'plasma', marker = 'o')
+    plt.scatter(x, y, c = density, vmin = 0, vmax = max,  cmap = 'plasma', marker = 'o')
     plt.colorbar()
     plt.title(file_name)
     plt.xlabel('$x$')
     plt.ylabel('$y$')
-    os.chdir('images')
     plt.savefig(file_name + '.png')
 
     plt.figure().clear()
     plt.close()
     plt.cla()
     plt.clf() 
+
+def plot_graph_vel(file_name,max):
+    figure_features()
+
+    #Open the file
+    x , y , vx, vy  = np.loadtxt(file_name, unpack=True)
+    
+    #Plot the graph
+    plt.figure()
+    plt.scatter(x, y, c = vx, cmap = 'plasma', vmax=  max , marker = 'o')
+    plt.colorbar()
+    plt.title(file_name)
+    plt.xlabel('$x$')
+    plt.ylabel('$y$')
+    plt.savefig(file_name + '.png')
+
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
 
 def plot_velocity(file):
 
@@ -181,7 +202,13 @@ def plot_instability_regime():
 
 
 
-    plt.figure()
+    fig = plt.figure()
+
+    # Aspect ratio
+
+    aspect_ratio = 1.618
+    fig.set_size_inches(8, 8 / aspect_ratio)
+    
 
     plt.scatter(instablity_regime_df['t'], abs(instablity_regime_df['psi_px'])**2, c = instablity_regime_df['px'] ,label = 'FT-x',s = 0.5,cmap = 'tab20')
  
@@ -203,8 +230,9 @@ def plot_instability_regime():
 
 
 if __name__ == '__main__':
-    create_images()
-    make_gif()
+    #create_images()
+    #make_gif()
+    #ain()
 
     #instablity_regime_df()
     plot_instability_regime()

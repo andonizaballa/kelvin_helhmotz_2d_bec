@@ -12,7 +12,7 @@
 program main
   use,intrinsic :: iso_c_binding
   implicit none
-  integer, parameter :: n1 = 64, n2 = 32
+  integer, parameter :: n1 = 128, n2 = 64
   integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
    complex(8), parameter :: ci=(0.d0,1.d0)
@@ -25,8 +25,8 @@ program main
   real(8), parameter :: e0=hbar**2.d0/(m*l0**2.d0)   ! energy scale (ho correspondence)
   real(8), parameter :: ascat = 1010.0d0*a_bohr/l0 
   real(8), parameter :: nat = 1.d3 
-  !real(8), parameter :: u = 4.d0*pi*nat*ascat
-  real(8), parameter :: u = 1   ! Adimensional interaction
+  real(8), parameter :: u = 4.d0*pi*nat*ascat
+  !real(8), parameter :: u = 1   ! Adimensional interaction
   !grid
   real(8), parameter, dimension(2) :: xmax=[30.d0,20.d0]
   real(8), parameter, dimension(2) :: xmin=-xmax
@@ -500,6 +500,40 @@ contains
 
    end subroutine derivativeypsi
 
+   subroutine derivativexphase(dpsi)
+     implicit none
+     complex(8), dimension(n1,n2) :: dpsi
+
+   psi = atan(dimag(psi)/real(psi))
+   in = psi(:,:)
+   call fft_transform(forth)
+   forall(i1=1:n1, i2=1:n2) in(i1,i2) = p1(i1)*out(i1,i2)
+   call fft_transform(back)
+   dpsi = out
+
+   end subroutine derivativexphase
+
+   subroutine derivativeyphase(dpsi)
+   implicit none
+   complex(8), dimension(n1,n2) :: dpsi
+
+   psi = atan(dimag(psi)/real(psi))
+   in = psi(:,:)
+
+   call fft_transform(forth)
+   !write(*,*) shape(p2), shape(out)
+   forall(i1=1:n1, i2=1:n2) in(i1,i2) = p2(i2)*out(i1,i2)
+   !write(*,*) shape(in)
+   call fft_transform(back)
+
+   !write(*,*) out
+
+   dpsi = out
+
+   end subroutine derivativeyphase
+
+   
+
   ! adds opposite phases in the two channels
   subroutine adding_phase
     implicit none
@@ -599,25 +633,25 @@ contains
 
    close(26)
 
-   ! Velocity 3 
+   !Velocity 3 
 
-   ! open(UNIT=27,FILE="data/vel3/vel3-"//number//".dat",STATUS='unknown')
+   open(UNIT=27,FILE="data/vel3/vel3-"//number//".dat",STATUS='unknown')
 
-   ! phasevec = atan(dimag(psi)/real(psi))
-   ! call derivativexpsi(dxpsi)
-   ! call derivativeypsi(dypsi)
+   phasevec = atan(dimag(psi)/real(psi))
+   call derivativexphase(dxpsi)
+   call derivativeyphase(dypsi)
 
-   ! do i1 = 1, n1
-   !    do i2 = 1, n2
+   do i1 = 1, n1
+      do i2 = 1, n2
 
-   !       velocity_x_3(i1,i2) = hbar/m * dxpsi(i1,i2)
-   !       velocity_y_3(i1,i2) = hbar/m * dypsi(i1,i2) 
-   !       write(27,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_3(i1,i2), velocity_y_3(i1,i2)
-   !    end do
-   !    write(27,*)
-   ! end do
+         velocity_x_3(i1,i2) = hbar/m * dxpsi(i1,i2)
+         velocity_y_3(i1,i2) = hbar/m * dypsi(i1,i2) 
+         write(27,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_3(i1,i2), velocity_y_3(i1,i2)
+      end do
+      write(27,*)
+   end do
 
-   ! close(27)
+   close(27)
 
    open(unit=43,file="data/FT-x/FT-x-"//number//".dat",status='unknown')
    open(unit=44,file="data/FT-y/FT-y-"//number//".dat",status='unknown')
