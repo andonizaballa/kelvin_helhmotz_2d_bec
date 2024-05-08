@@ -16,7 +16,8 @@ def create_images():
     #Get the files
     dens_files = glob.glob('density/dens-*.dat')
     phase_file = glob.glob('phase/phase-*.dat')
-    vel_files = glob.glob('vel1/vel1-*.dat')
+    vel1_files = glob.glob('vel1/vel1-*.dat')
+    vel2_files = glob.glob('vel2/vel2-*.dat')
     os.makedirs('images', exist_ok=True) 
     for file in dens_files:
         plot_graph(file)
@@ -24,8 +25,11 @@ def create_images():
     for file in phase_file:
         plot_graph(file)
     
-    for file in vel_files:
+    for file in vel1_files:
        plot_graph(file)
+
+    for file in vel2_files:
+        plot_graph(file)
 
 
 
@@ -44,12 +48,15 @@ def make_gif():
     # Get the list of filenames matching the pattern sorted numerically
     dens_file_names = sorted(glob.glob("density/dens-*.dat.png"), key=extract_number)
     phase_file_names = sorted(glob.glob("phase/phase-*.dat.png"), key=extract_number)
-    vel_file_names = sorted(glob.glob("vel1/vel1-*.dat.png"), key=extract_number)
+    vel1_file_names = sorted(glob.glob("vel1/vel1-*.dat.png"), key=extract_number)
+    vel2_file_names = sorted(glob.glob("vel2/vel2-*.dat.png"), key=extract_number)
     
     # Open images in sorted order
     dens_frames = [Image.open(image) for image in dens_file_names]
     phase_frames = [Image.open(image) for image in phase_file_names]
-    vel_frames = [Image.open(image) for image in vel_file_names]
+    vel1_frames = [Image.open(image) for image in vel_file_names]
+    vel2_frames = [Image.open(image) for image in vel_file_names]
+
 
     print(vel_frames)
 
@@ -59,8 +66,12 @@ def make_gif():
     frame_one = phase_frames[0]
     frame_one.save("phase.gif", format="GIF", append_images=phase_frames, save_all=True, duration=150, loop=0)
     
-    frame_one = vel_frames[0]
-    frame_one.save("velocity.gif", format="GIF", append_images=vel_frames,
+    frame_one = vel1_frames[0]
+    frame_one.save("velocity1.gif", format="GIF", append_images=vel1_frames,
+                   save_all=True, duration=150, loop=0)
+    
+    frame_one = vel2_frames[0]
+    frame_one.save("velocity2.gif", format="GIF", append_images=vel2_frames,
                    save_all=True, duration=150, loop=0)
     
     
@@ -71,7 +82,10 @@ def make_gif():
     for file in phase_file_names:
         os.remove(file)
 
-    for file in vel_file_names:
+    for file in vel1_file_names:
+        os.remove(file)
+
+    for file in vel2_file_names:
         os.remove(file)
     
 def plot_graph(file_name):
@@ -82,12 +96,13 @@ def plot_graph(file_name):
     
     #Plot the graph
     plt.figure()
-    plt.plot(x, y, c = density, vmin = 0, cmap = 'plasma', marker = 'o')
+    plt.scatter(x, y, c = density, vmin = 0, cmap = 'plasma', marker = 'o')
     plt.colorbar()
     plt.title(file_name)
     plt.xlabel('$x$')
     plt.ylabel('$y$')
-    plt.savefig('images/'+ file_name + '.png')
+    os.chdir('images')
+    plt.savefig(file_name + '.png')
 
     plt.figure().clear()
     plt.close()
@@ -162,13 +177,21 @@ def plot_instability_regime():
 
     #Plot the graph
     figure_features()
-    plt.scatter(instablity_regime_df['t'], np.log(abs(instablity_regime_df['psi_px'])**2), c = instablity_regime_df['px'] ,label = 'FT-x',s = 0.5,cmap = 'tab20c')
+
+
+
+
+    plt.figure()
+
+    plt.scatter(instablity_regime_df['t'], abs(instablity_regime_df['psi_px'])**2, c = instablity_regime_df['px'] ,label = 'FT-x',s = 0.5,cmap = 'tab20')
  
     plt.xlabel('Time ($t$)')
     plt.ylabel(r'$\tilde{n} (p_x) $') 
+    plt.yscale('log')
+    #plt.xscale('log')
     cbar = plt.colorbar()
     cbar.set_label('$p_x$')
-    plt.legend(loc = 'upper right')
+    #plt.legend(loc = 'upper right')
     plt.title('Dynamical (modulational) instability (FT-x)')
     plt.savefig('instability_regime.png')
     plt.figure().clear()
@@ -180,8 +203,8 @@ def plot_instability_regime():
 
 
 if __name__ == '__main__':
-    #create_images()
-    #make_gif()
+    create_images()
+    make_gif()
 
     #instablity_regime_df()
     plot_instability_regime()

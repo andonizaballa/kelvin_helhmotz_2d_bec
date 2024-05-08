@@ -12,8 +12,8 @@
 program main
   use,intrinsic :: iso_c_binding
   implicit none
-  integer, parameter :: n1=64,n2=32
-   integer, dimension(1:2) :: dim=[n1,n2]
+  integer, parameter :: n1 = 64, n2 = 32
+  integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
    complex(8), parameter :: ci=(0.d0,1.d0)
   real(8), parameter :: pi=3.141592653589793238d0
@@ -470,26 +470,32 @@ contains
 
   end subroutine normalize
 
-  subroutine derivativexpsi(psi,dpsi)
+  subroutine derivativexpsi(dpsi)
      implicit none
-     complex(8), dimension(n1,n2) :: psi,dpsi
+     complex(8), dimension(n1,n2) :: dpsi
    
    in = psi(:,:)
    call fft_transform(forth)
-   forall(i1=1:n1, i2=1:n2) in = p1(i1)*out(i1,i2)
+   forall(i1=1:n1, i2=1:n2) in(i1,i2) = p1(i1)*out(i1,i2)
    call fft_transform(back)
    dpsi = out
 
    end subroutine derivativexpsi
 
-   subroutine derivativeypsi(psi,dpsi)
+   subroutine derivativeypsi(dpsi)
    implicit none
-   complex(8), dimension(n1,n2) :: psi,dpsi
+   complex(8), dimension(n1,n2) :: dpsi
    
    in = psi(:,:)
+
    call fft_transform(forth)
-   forall(i1=1:n1, i2=1:n2) in = p2(i2)*out(i1,i2)
+   !write(*,*) shape(p2), shape(out)
+   forall(i1=1:n1, i2=1:n2) in(i1,i2) = p2(i2)*out(i1,i2)
+   !write(*,*) shape(in)
    call fft_transform(back)
+
+   !write(*,*) out
+
    dpsi = out
 
    end subroutine derivativeypsi
@@ -518,10 +524,10 @@ contains
     implicit none
     character(3) :: number
     real(8), dimension(n1,n2) :: phase, velocity_x_1, velocity_y_1, velocity_x_2, velocity_y_2, velocity_x_3, velocity_y_3
-    complex(8), dimension(:,:) , allocatable :: dxpsi, dypsi, phasevec
+    complex(8), dimension(n1,n2) :: dxpsi, dypsi, phasevec
     real(8) :: maxpsi
 
-   allocate(dxpsi(n1,n2),dypsi(n1,n2),phasevec(n1,n2))
+
 
     ! density
     open(UNIT=23,FILE="data/density/dens-"//number//".dat",STATUS='unknown')
@@ -577,15 +583,15 @@ contains
 
    open(UNIT=26,FILE="data/vel2/vel2-"//number//".dat",STATUS='unknown')
 
-   call derivativexpsi(psi,dxpsi)
-   call derivativeypsi(psi,dypsi)
+   call derivativexpsi(dxpsi)
+   call derivativeypsi(dypsi)
 
-
+   !write(*,*) dxpsi(32,31), dypsi(32,32)
    do i1 = 1, n1
       do i2 = 1, n2
 
-         velocity_x_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dxpsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
-         velocity_y_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dypsi(i1,i2)/hbar)/abs(psi(i1,i2))**2
+         velocity_x_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dxpsi(i1,i2))/abs(psi(i1,i2))**2
+         velocity_y_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*dypsi(i1,i2))/abs(psi(i1,i2))**2
          write(26,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_2(i1,i2), velocity_y_2(i1,i2)
       end do
       write(26,*)
@@ -595,23 +601,23 @@ contains
 
    ! Velocity 3 
 
-   open(UNIT=27,FILE="data/vel3/vel3-"//number//".dat",STATUS='unknown')
+   ! open(UNIT=27,FILE="data/vel3/vel3-"//number//".dat",STATUS='unknown')
 
-   phasevec = atan(dimag(psi)/real(psi))
-   call derivativexpsi(phasevec,dxpsi)
-   call derivativeypsi(phasevec,dypsi)
+   ! phasevec = atan(dimag(psi)/real(psi))
+   ! call derivativexpsi(dxpsi)
+   ! call derivativeypsi(dypsi)
 
-   do i1 = 1, n1
-      do i2 = 1, n2
+   ! do i1 = 1, n1
+   !    do i2 = 1, n2
 
-         velocity_x_3(i1,i2) = hbar/m * dxpsi(i1,i2)
-         velocity_y_3(i1,i2) = hbar/m * dypsi(i1,i2) 
-         write(27,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_3(i1,i2), velocity_y_3(i1,i2)
-      end do
-      write(27,*)
-   end do
+   !       velocity_x_3(i1,i2) = hbar/m * dxpsi(i1,i2)
+   !       velocity_y_3(i1,i2) = hbar/m * dypsi(i1,i2) 
+   !       write(27,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_3(i1,i2), velocity_y_3(i1,i2)
+   !    end do
+   !    write(27,*)
+   ! end do
 
-   close(27)
+   ! close(27)
 
    open(unit=43,file="data/FT-x/FT-x-"//number//".dat",status='unknown')
    open(unit=44,file="data/FT-y/FT-y-"//number//".dat",status='unknown')
