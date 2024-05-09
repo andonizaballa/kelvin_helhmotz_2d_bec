@@ -15,24 +15,26 @@ from fig_config import (
 def main():
 
     #Create the images for density, phase, vel1 and vel2
-    create_images('dens')
-    create_images('phase')
+    #create_images('dens')
+    #create_images('phase')
     create_images('vel1')
-    create_images('vel2')
+    #create_images('vel2')
 
     #Create the gif for density, phase, vel1 and vel2
-    make_gif('dens')
-    make_gif('phase')
-    make_gif('vel1')
-    make_gif('vel2')
+    #make_gif('dens')
+    #make_gif('phase')
+    #make_gif('vel1')
+    #make_gif('vel2')
 
 def create_images(folder_name):
 
     dict_folder = {'dens': 'density', 'phase': 'phase', 'vel1': 'vel1', 'vel2': 'vel2'}
 
-    dict_max = {'dens': 7E-4, 'phase': 2*np.pi, 'vel1': 1, 'vel2': 1}
+    dict_max = {'dens': 7E-4, 'phase': 2*np.pi, 'vel1': 0.5E-88, 'vel2': 2.5}
+    dict_min = {'dens': 0, 'phase': 0, 'vel1': -0.5E-8, 'vel2': -2.5}
 
     max = dict_max[folder_name]
+    min = dict_min[folder_name]
 
     #Get the files
 
@@ -40,16 +42,18 @@ def create_images(folder_name):
 
     files = sorted(glob.glob(folder_name + "-*.dat"), key=extract_number)
 
+    print(files)
+
     os.makedirs('images', exist_ok=True)
 
     #If folder is density or phase
 
     if folder_name == 'dens' or folder_name == 'phase':
         for file in files:
-            plot_graph_dens(file,max) 
+            plot_graph_dens(file,max,min) 
     else: 
         for file in files:
-            plot_graph_vel(file,max)
+            plot_graph_vel(file,max,min)
 
     os.chdir('..')
     
@@ -71,7 +75,7 @@ def make_gif(folder_name):
     os.chdir(dict_folder[folder_name])
 
     # Get the list of filenames matching the pattern sorted numerically
-    file_names = sorted(glob.glob(folder_name + "-*.dat.png"), key=extract_number)
+    file_names = sorted(glob.glob(folder_name + "-*.dat.png"), key=extract_number(folder_name + "-*.dat.png"))
 
     
     # Open images in sorted order
@@ -90,17 +94,20 @@ def make_gif(folder_name):
         os.remove(file)
     os.chdir('..')
     
-def plot_graph_dens(file_name,max):
+def plot_graph_dens(file_name,max,min):
     figure_features()
 
     #Open the file
     x , y , density  = np.loadtxt(file_name, unpack=True)
     
     #Plot the graph
-    plt.figure()
-    plt.scatter(x, y, c = density, vmin = 0, vmax = max,  cmap = 'plasma', marker = 'o')
+    fig = plt.figure()
+
+    aspect_ratio = 2
+    fig.set_size_inches(8, 8 / aspect_ratio)
+    plt.scatter(x, y, c = density, vmin = min, vmax = max,  cmap = 'plasma', marker = 'o')
     plt.colorbar()
-    plt.title(file_name)
+    #plt.title(file_name)
     plt.xlabel('$x$')
     plt.ylabel('$y$')
     plt.savefig(file_name + '.png')
@@ -110,20 +117,28 @@ def plot_graph_dens(file_name,max):
     plt.cla()
     plt.clf() 
 
-def plot_graph_vel(file_name,max):
+def plot_graph_vel(file_name,max,min):
     figure_features()
+
+    fig = plt.figure()
+
+    aspect_ratio = 2
+    fig.set_size_inches(8, 8 / aspect_ratio)
 
     #Open the file
     x , y , vx, vy  = np.loadtxt(file_name, unpack=True)
     
     #Plot the graph
-    plt.figure()
-    plt.scatter(x, y, c = vx, cmap = 'plasma', vmax=  max , marker = 'o')
-    plt.colorbar()
-    plt.title(file_name)
+
+    plt.scatter(x, y, c = vx, cmap = 'viridis', vmin = min ,vmax=  max , marker = 'o')
+    cbar = plt.colorbar()
+    #plt.title(file_name)
     plt.xlabel('$x$')
     plt.ylabel('$y$')
+    plt.xlim(-30,30)
+    plt.ylim(-17.5,17.5)
     plt.savefig(file_name + '.png')
+    cbar.set_label('$v_x$')
 
     plt.figure().clear()
     plt.close()
@@ -151,7 +166,9 @@ def plot_velocity(file):
     plt.ylabel('$v_x$')
     plt.xlabel('$ y $')
     plt.legend()
-    plt.title('Velocity in x direction vs y')
+    plt.xlim(0,100)
+    plt.ylim()
+    #plt.title('Velocity in x direction vs y')
     plt.savefig('velocity.png')
     plt.figure().clear()
     plt.close()
@@ -188,6 +205,9 @@ def instablity_regime_df():
 
     os.chdir('..')
     #Save the dataframe as a csv file
+    #Order by px
+
+    instablity_regime_df = instablity_regime_df.sort_values(by = 'px')
 
     instablity_regime_df.to_csv('instability_regime.csv')
 
@@ -208,18 +228,28 @@ def plot_instability_regime():
 
     aspect_ratio = 1.618
     fig.set_size_inches(8, 8 / aspect_ratio)
+
+    #For every px value, plot the graph
+
+    # # CWe assign a different color to each px value
+    # color_map = plt.cm.get_cmap('tab20')
+    # for px in instablity_regime_df['px'].unique():
+    #     px_df = instablity_regime_df[instablity_regime_df['px'] == px]
+    #     plt.scatter(px_df['t'], abs(px_df['psi_px'])**2, label='px = ' + str(px), s=0.5, c= 'tab20')
     
 
-    plt.scatter(instablity_regime_df['t'], abs(instablity_regime_df['psi_px'])**2, c = instablity_regime_df['px'] ,label = 'FT-x',s = 0.5,cmap = 'tab20')
+
+    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 2,cmap = 'plasma', vmin = 1E3, vmax = 1E5)
  
     plt.xlabel('Time ($t$)')
-    plt.ylabel(r'$\tilde{n} (p_x) $') 
-    plt.yscale('log')
+    plt.xlim(0, 100)
+    plt.ylabel('$p_x$') 
+    #plt.yscale('log')
     #plt.xscale('log')
     cbar = plt.colorbar()
-    cbar.set_label('$p_x$')
+    cbar.set_label(r'$\tilde{n} (p_x) $')
     #plt.legend(loc = 'upper right')
-    plt.title('Dynamical (modulational) instability (FT-x)')
+    #plt.title('Dynamical (modulational) instability (FT-x)')
     plt.savefig('instability_regime.png')
     plt.figure().clear()
     plt.close()
@@ -232,7 +262,7 @@ def plot_instability_regime():
 if __name__ == '__main__':
     #create_images()
     #make_gif()
-    #ain()
+    #main()
 
     #instablity_regime_df()
     plot_instability_regime()
