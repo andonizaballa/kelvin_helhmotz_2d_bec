@@ -15,14 +15,13 @@ from fig_config import (
 def main():
 
     #Create the images for density, phase, vel1 and vel2
-    #create_images('dens')
-    #create_images('phase')
-    create_images('vel1')
+    create_images('dens')
+    create_images('phase')
     #create_images('vel2')
 
     #Create the gif for density, phase, vel1 and vel2
-    #make_gif('dens')
-    #make_gif('phase')
+    make_gif('dens')
+    make_gif('phase')
     #make_gif('vel1')
     #make_gif('vel2')
 
@@ -30,7 +29,7 @@ def create_images(folder_name):
 
     dict_folder = {'dens': 'density', 'phase': 'phase', 'vel1': 'vel1', 'vel2': 'vel2'}
 
-    dict_max = {'dens': 7E-4, 'phase': 2*np.pi, 'vel1': 0.5E-88, 'vel2': 2.5}
+    dict_max = {'dens': 9E-4, 'phase': 2*np.pi, 'vel1': 0.5E-88, 'vel2': 2.5}
     dict_min = {'dens': 0, 'phase': 0, 'vel1': -0.5E-8, 'vel2': -2.5}
 
     max = dict_max[folder_name]
@@ -75,7 +74,7 @@ def make_gif(folder_name):
     os.chdir(dict_folder[folder_name])
 
     # Get the list of filenames matching the pattern sorted numerically
-    file_names = sorted(glob.glob(folder_name + "-*.dat.png"), key=extract_number(folder_name + "-*.dat.png"))
+    file_names = sorted(glob.glob(folder_name + "-*.dat.png"), key=extract_number)
 
     
     # Open images in sorted order
@@ -85,13 +84,13 @@ def make_gif(folder_name):
 
 
     frame_one = frames[0]
-    frame_one.save(folder_name  + ".gif", format="GIF", append_images=frames, save_all=True, duration=150, loop=0)
+    frame_one.save(folder_name  + ".gif", format="GIF", append_images=frames, save_all=True, duration=100, loop=0)
     
     
     
     # Remove the images
-    for file in file_names:
-        os.remove(file)
+    #for file in file_names:
+     #   os.remove(file)
     os.chdir('..')
     
 def plot_graph_dens(file_name,max,min):
@@ -99,6 +98,8 @@ def plot_graph_dens(file_name,max,min):
 
     #Open the file
     x , y , density  = np.loadtxt(file_name, unpack=True)
+
+    time = extract_number(file_name)
     
     #Plot the graph
     fig = plt.figure()
@@ -107,7 +108,9 @@ def plot_graph_dens(file_name,max,min):
     fig.set_size_inches(8, 8 / aspect_ratio)
     plt.scatter(x, y, c = density, vmin = min, vmax = max,  cmap = 'plasma', marker = 'o')
     plt.colorbar()
-    #plt.title(file_name)
+    plt.xlim(-30,30)
+    plt.ylim(-20,20)
+    plt.title('t = ' + str(time))
     plt.xlabel('$x$')
     plt.ylabel('$y$')
     plt.savefig(file_name + '.png')
@@ -151,6 +154,8 @@ def plot_velocity(file):
 
     x , y , vx  = np.loadtxt(file, unpack=True)
 
+    time = extract_number(file)
+
     # We want to plot y versus vx for a given value of x 
 
     for xnum in x:
@@ -165,6 +170,7 @@ def plot_velocity(file):
 
     plt.ylabel('$v_x$')
     plt.xlabel('$ y $')
+    plt.title('t = ' + str(time))
     plt.legend()
     plt.xlim(0,100)
     plt.ylim()
@@ -238,23 +244,97 @@ def plot_instability_regime():
     #     plt.scatter(px_df['t'], abs(px_df['psi_px'])**2, label='px = ' + str(px), s=0.5, c= 'tab20')
     
 
+    y_lim =max(instablity_regime_df['px'])
 
-    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 2,cmap = 'plasma', vmin = 1E3, vmax = 1E5)
+    # We will delete the px values +- 0.5236
+
+    instablity_regime_df = instablity_regime_df[instablity_regime_df['px'] != 0.5236]
+
+    instablity_regime_df = instablity_regime_df[instablity_regime_df['px'] != -0.5236]
+
+    
+
+    #print(instablity_regime_df['px'])
+
+
+    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 9,cmap = 'viridis', vmin= 1e4, vmax = 1e9)
  
     plt.xlabel('Time ($t$)')
-    plt.xlim(0, 100)
-    plt.ylabel('$p_x$') 
+    plt.xlim(0, 200)
+    plt.ylim(-y_lim, y_lim)
+    plt.ylabel('$p_x$', rotation = 0, y = 0.45) 
     #plt.yscale('log')
     #plt.xscale('log')
     cbar = plt.colorbar()
-    cbar.set_label(r'$\tilde{n} (p_x) $')
+    cbar.set_label(r'$\tilde{n} (p_x) $', rotation = 0)
     #plt.legend(loc = 'upper right')
     #plt.title('Dynamical (modulational) instability (FT-x)')
-    plt.savefig('instability_regime.png')
+    plt.savefig('instability_regime_t_vs_px.png')
     plt.figure().clear()
     plt.close()
     plt.cla()
     plt.clf()
+
+def plot_instability_regime_px(df, px):
+
+    # Read the csv file
+    instablity_regime_df = df
+
+    instablity_regime_df = instablity_regime_df.sort_values(by = 't')
+
+    #Plot the graph
+    figure_features()
+
+
+
+
+    fig = plt.figure( figsize=(8, 10))
+
+    # Aspect ratio
+
+    aspect_ratio = 1.6168
+    fig.set_size_inches(8, 8 / aspect_ratio)
+
+    #For every px value, plot the graph
+
+    # # CWe assign a different color to each px value
+    # color_map = plt.cm.get_cmap('tab20')
+    # for px in instablity_regime_df['px'].unique():
+    #     px_df = instablity_regime_df[instablity_regime_df['px'] == px]
+    #     plt.scatter(px_df['t'], abs(px_df['psi_px'])**2, label='px = ' + str(px), s=0.5, c= 'tab20')
+    
+
+
+
+
+    instablity_regime_df = instablity_regime_df[instablity_regime_df['px'] == px]
+    plt.plot(instablity_regime_df['t'], instablity_regime_df['psi_px'], linewidth = 1,  c = 'orangered' )
+ 
+    plt.xlabel('Time ($t$)')
+    plt.xlim(0, 200)
+    plt.ylabel(r'$\tilde{n} (\bf{x}) $', rotation = 0, labelpad = 20) 
+    plt.yscale('log')
+    #plt.xscale('log')
+    #plt.legend(loc = 'upper right')
+    #plt.title('Dynamical (modulational) instability (FT-x)')
+    plt.savefig('instability_regime_px' + str(px) + '.png', dpi = 300)
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+
+
+
+def plot_instability_allpx():
+
+    instablity_regime_df = pd.read_csv('instability_regime.csv')
+
+    os.chdir('instability_regime')
+
+    for px in instablity_regime_df['px'].unique():
+        plot_instability_regime_px(instablity_regime_df, px)
+
+    os.chdir('..')
 
 
 
@@ -265,7 +345,9 @@ if __name__ == '__main__':
     #main()
 
     #instablity_regime_df()
-    plot_instability_regime()
+
+    plot_instability_regime()  
+    #plot_instability_allpx()
 
 
     
