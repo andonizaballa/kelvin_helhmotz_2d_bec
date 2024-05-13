@@ -1,0 +1,1 @@
+gfortran -Ofast -Wall -I/opt/local/include/ -L/opt/local/lib/ -lfftw3 -lfftw3_threads  KHI-2D_planar.f90 zroots.f90
