@@ -15,15 +15,32 @@ from fig_config import (
 def main():
 
     #Create the images for density, phase, vel1 and vel2
-    create_images('dens')
-    create_images('phase')
+    #create_images('dens')
+    #create_images('phase')
     #create_images('vel2')
 
+    #Create the images for the velocity profile
+    plot_velocity_profile_allx()
+
     #Create the gif for density, phase, vel1 and vel2
-    make_gif('dens')
-    make_gif('phase')
-    #make_gif('vel1')
+    #make_gif('dens')
+    #make_gif('phase')
     #make_gif('vel2')
+
+    #Create the gif for the velocity profile
+    #gif_velocity_profile()
+
+    #Create the dataframe for the instability regime   
+    #instablity_regime_df()
+
+    #Plot the instability regime
+    #plot_instability_regime()
+
+    #Plot the instability regime for all px values
+    #plot_instability_allpx()
+
+    
+
 
 def create_images(folder_name):
 
@@ -41,7 +58,7 @@ def create_images(folder_name):
 
     files = sorted(glob.glob(folder_name + "-*.dat"), key=extract_number)
 
-    print(files)
+    #print(files)
 
     os.makedirs('images', exist_ok=True)
 
@@ -62,9 +79,11 @@ def create_images(folder_name):
 
 def extract_number(filename):
     # Regular expression to match the numerical part of the file name
-    match = re.search(r'\d+', filename)
+    match = re.search(r'-([0-9]+)', filename)
+
+    
     if match:
-        return int(match.group())
+        return (-1)*int(match.group())
     else:
         return -1  # Return -1 if no number found
 
@@ -148,20 +167,22 @@ def plot_graph_vel(file_name,max,min):
     plt.cla()
     plt.clf()
 
-def plot_velocity(file):
+def plot_velocity_profile(xprof,file):
 
     figure_features()
 
-    x , y , vx  = np.loadtxt(file, unpack=True)
+    x , y , vx , vy  = np.loadtxt(file, unpack=True)
 
     time = extract_number(file)
+
+    #print(time)
 
     # We want to plot y versus vx for a given value of x 
 
     for xnum in x:
         # Get the index of the x value
         
-        if xnum == 17.8125 :
+        if xnum == xprof :
             index = np.where(x == xnum)
             xlabel = xnum
             
@@ -172,14 +193,28 @@ def plot_velocity(file):
     plt.xlabel('$ y $')
     plt.title('t = ' + str(time))
     plt.legend()
-    plt.xlim(0,100)
-    plt.ylim()
+    plt.xlim(-17.5,17.5)
+    plt.ylim(-2.5,2.5)
     #plt.title('Velocity in x direction vs y')
-    plt.savefig('velocity.png')
+    plt.savefig('velocity_profile_x_'+ str(xprof)+'_'+str(file)+'.png')
     plt.figure().clear()
     plt.close()
     plt.cla()
     plt.clf()
+
+def plot_velocity_profile_allx():
+
+    os.chdir('vel2')
+
+    file_names = sorted(glob.glob('vel2-*.dat'), key=extract_number)
+                                  
+    for file in file_names:
+        plot_velocity_profile(17.8125,file)
+
+    os.chdir('..')
+
+
+
 
 def instablity_regime_df():
 
@@ -257,7 +292,7 @@ def plot_instability_regime():
     #print(instablity_regime_df['px'])
 
 
-    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 9,cmap = 'viridis', vmin= 1e4, vmax = 1e9)
+    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 9,cmap = 'plasma', vmin= 1e7, vmax = 5e9)
  
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 200)
@@ -336,18 +371,27 @@ def plot_instability_allpx():
 
     os.chdir('..')
 
+def gif_velocity_profile():
+
+    os.chdir('vel2')
+
+    # Get the list of filenames matching the pattern sorted numerically
+    file_names = sorted(glob.glob('velocity_profile_x*.png'), key=extract_number)
+
+    # Open images in sorted order
+    frames = [Image.open(image) for image in file_names]
+
+    frame_one = frames[0]
+    frame_one.save('velocity_profile.gif', format="GIF", append_images=frames, save_all=True, duration=100, loop=0)
+    
+    os.chdir('..')
+
 
 
 
 if __name__ == '__main__':
-    #create_images()
-    #make_gif()
-    #main()
+    main() 
 
-    #instablity_regime_df()
-
-    plot_instability_regime()  
-    #plot_instability_allpx()
 
 
     
