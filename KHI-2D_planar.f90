@@ -85,7 +85,7 @@ program main
    call system('mkdir data/FT-x')
    call system('mkdir data/FT-y')
 
-
+   write(*,*) 
 
   ! Create the initial state with the potential 
   call init_stat

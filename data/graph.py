@@ -20,7 +20,7 @@ def main():
     #create_images('vel2')
 
     #Create the images for the velocity profile
-    plot_velocity_profile_allx()
+    #plot_velocity_profile_allx()
 
     #Create the gif for density, phase, vel1 and vel2
     #make_gif('dens')
@@ -33,11 +33,11 @@ def main():
     #Create the dataframe for the instability regime   
     #instablity_regime_df()
 
-    #Plot the instability regime
-    #plot_instability_regime()
+    #Plot the instability regime p_x vs t
+    #plot_instability_regime_px_t()
 
     #Plot the instability regime for all px values
-    #plot_instability_allpx()
+    plot_instability_allpx()
 
     
 
@@ -252,7 +252,7 @@ def instablity_regime_df():
 
     instablity_regime_df.to_csv('instability_regime.csv')
 
-def plot_instability_regime():
+def plot_instability_regime_px_t():
 
     # Read the csv file
     instablity_regime_df = pd.read_csv('instability_regime.csv')
@@ -269,34 +269,15 @@ def plot_instability_regime():
 
     aspect_ratio = 1.618
     fig.set_size_inches(8, 8 / aspect_ratio)
-
-    #For every px value, plot the graph
-
-    # # CWe assign a different color to each px value
-    # color_map = plt.cm.get_cmap('tab20')
-    # for px in instablity_regime_df['px'].unique():
-    #     px_df = instablity_regime_df[instablity_regime_df['px'] == px]
-    #     plt.scatter(px_df['t'], abs(px_df['psi_px'])**2, label='px = ' + str(px), s=0.5, c= 'tab20')
     
 
     y_lim =max(instablity_regime_df['px'])
-
-    # We will delete the px values +- 0.5236
-
-    instablity_regime_df = instablity_regime_df[instablity_regime_df['px'] != 0.5236]
-
-    instablity_regime_df = instablity_regime_df[instablity_regime_df['px'] != -0.5236]
-
-    
-
-    #print(instablity_regime_df['px'])
-
 
     plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 9,cmap = 'plasma', vmin= 1e7, vmax = 5e9)
  
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 200)
-    plt.ylim(-y_lim, y_lim)
+    plt.ylim(-4, 4)
     plt.ylabel('$p_x$', rotation = 0, y = 0.45) 
     #plt.yscale('log')
     #plt.xscale('log')
@@ -319,9 +300,6 @@ def plot_instability_regime_px(df, px):
 
     #Plot the graph
     figure_features()
-
-
-
 
     fig = plt.figure( figsize=(8, 10))
 
@@ -347,7 +325,7 @@ def plot_instability_regime_px(df, px):
  
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 200)
-    plt.ylabel(r'$\tilde{n} (\bf{x}) $', rotation = 0, labelpad = 20) 
+    plt.ylabel(r'$\tilde{n} (\bf{p_x}) $', rotation = 0, labelpad = 20) 
     plt.yscale('log')
     #plt.xscale('log')
     #plt.legend(loc = 'upper right')
