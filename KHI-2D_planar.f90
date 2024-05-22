@@ -115,6 +115,7 @@ program main
   open(UNIT=16,FILE='data/xmean.dat',STATUS='unknown')
   open(UNIT=41,FILE='data/ft_x.dat',STATUS='unknown')
   open(UNIT=42,FILE='data/ft_y.dat',STATUS='unknown')
+  open(UNIT=50,FILE='data/a_time.dat',STATUS='unknown')
 
   write(*,*) n1, n2
 
@@ -129,6 +130,10 @@ program main
      end if
 
      uext(:,:) = uWAVEGUIDE(:,:) + (1.d0-factor)*uBARRIER(:,:)
+
+     ! write the time in a file
+
+     write(50,'(2x,f8.4)') t, (1.d0-factor)*A 
 
      ! evolution
      call one_step_evolution
@@ -150,6 +155,7 @@ program main
   close(16)
   close(41)
   close(42)
+  close(50)
 
   call dfftw_destroy_plan(plan_f)
   call dfftw_destroy_plan(plan_b)

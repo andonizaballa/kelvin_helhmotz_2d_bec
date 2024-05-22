@@ -34,10 +34,10 @@ def main():
     #instablity_regime_df()
 
     #Plot the instability regime p_x vs t
-    #plot_instability_regime_px_t()
+    plot_instability_regime_px_t()
 
     #Plot the instability regime for all px values
-    plot_instability_allpx()
+    #plot_instability_allpx()
 
     
 
@@ -273,11 +273,11 @@ def plot_instability_regime_px_t():
 
     y_lim =max(instablity_regime_df['px'])
 
-    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 9,cmap = 'plasma', vmin= 1e7, vmax = 5e9)
+    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 10,cmap = 'plasma', vmin= 1e7, vmax = 5e9)
  
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 200)
-    plt.ylim(-4, 4)
+    plt.ylim(-3.5, 3.5)
     plt.ylabel('$p_x$', rotation = 0, y = 0.45) 
     #plt.yscale('log')
     #plt.xscale('log')
