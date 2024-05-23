@@ -12,8 +12,7 @@
 program main
   use,intrinsic :: iso_c_binding
   implicit none
-  !integer, parameter :: n1 = 256, n2 = 128
-  integer, 
+  integer, parameter :: n1 = 256, n2 = 128
   integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
    complex(8), parameter :: ci=(0.d0,1.d0)
@@ -47,7 +46,7 @@ program main
   integer, parameter :: shots=nint(t_evol)          ! saves every ms
   integer, parameter :: kmax=t_evol/dt
   real(8), parameter :: dwt=dt*1.d-3*e0/hbar
-  real(8), parameter :: t0 = 15.d0                  ! switch-off time of teh barrier
+  real(8), parameter :: t0 = 30.d0                  ! switch-off time of teh barrier
   real(8) :: t,factor
   !
   include 'fftw3.f03'
@@ -133,7 +132,7 @@ program main
 
      ! write the time in a file
 
-     write(50,'(2x,f8.4)') t, (1.d0-factor)*A 
+      write(50,'(2x,f8.4,2x,f10.4)') t, (1.d0-factor)*A 
 
      ! evolution
      call one_step_evolution

@@ -14,30 +14,33 @@ from fig_config import (
 
 def main():
 
-    #Create the images for density, phase, vel1 and vel2
-    #create_images('dens')
-    #create_images('phase')
-    #create_images('vel2')
+    # #Create the images for density, phase, vel1 and vel2
+    # create_images('dens')
+    # create_images('phase')
+    # create_images('vel2')
 
-    #Create the images for the velocity profile
-    #plot_velocity_profile_allx()
+    # #Create the images for the velocity profile
+    # plot_velocity_profile_allx()
 
-    #Create the gif for density, phase, vel1 and vel2
-    #make_gif('dens')
-    #make_gif('phase')
-    #make_gif('vel2')
+    # #Create the gif for density, phase, vel1 and vel2
+    # make_gif('dens')
+    # make_gif('phase')
+    # make_gif('vel2')
 
-    #Create the gif for the velocity profile
-    #gif_velocity_profile()
+    # #Create the gif for the velocity profile
+    # gif_velocity_profile()
 
-    #Create the dataframe for the instability regime   
-    #instablity_regime_df()
+    # #Create the dataframe for the instability regime   
+    # instablity_regime_df()
 
-    #Plot the instability regime p_x vs t
-    plot_instability_regime_px_t()
+    # #Plot the instability regime p_x vs t
+    # plot_instability_regime_px_t()
 
-    #Plot the instability regime for all px values
-    #plot_instability_allpx()
+    # #Plot the instability regime for all px values
+    # plot_instability_allpx()
+
+    #Plot the barrier evolution
+    barrier_evolution()
 
     
 
@@ -274,7 +277,8 @@ def plot_instability_regime_px_t():
     y_lim =max(instablity_regime_df['px'])
 
     plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 10,cmap = 'plasma', vmin= 1e7, vmax = 5e9)
- 
+    plt.axhline(y=0.5236, color='firebrick', linestyle='--', lw = 1)
+    plt.axhline(y=-0.5236, color='firebrick', linestyle='--', lw = 1)
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 200)
     plt.ylim(-3.5, 3.5)
@@ -363,6 +367,40 @@ def gif_velocity_profile():
     frame_one.save('velocity_profile.gif', format="GIF", append_images=frames, save_all=True, duration=100, loop=0)
     
     os.chdir('..')
+
+def barrier_evolution():
+
+    t, A = np.loadtxt('a_time.dat', unpack = True)
+
+    barrier_evolution_df = pd.DataFrame(columns = ['t', 'A'])
+
+    barrier_evolution_df['t'] = t
+    barrier_evolution_df['A'] = A
+
+    #Now t=15 will be the zero value in the time axis
+
+    t0 = 30
+
+    barrier_evolution_df['t'] = barrier_evolution_df['t'] - t0
+
+    figure_features()
+
+    fig = plt.figure()
+    aspect_ratio = 3
+    fig.set_size_inches(8, 8 / aspect_ratio)    
+
+    plt.plot(barrier_evolution_df['t'], barrier_evolution_df['A'], color='mediumblue')
+
+    plt.xlabel('Time ($t$)')
+    plt.ylabel('A')
+    plt.xlim(-t0, 200-t0)
+    plt.title('Barrier evolution')
+    plt.savefig('barrier_evolution.png')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+
 
 
 
