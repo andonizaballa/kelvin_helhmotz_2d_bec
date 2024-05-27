@@ -12,7 +12,7 @@
 program main
   use,intrinsic :: iso_c_binding
   implicit none
-  integer, parameter :: n1 = 256, n2 = 128
+  integer, parameter :: n1 = 128, n2 = 56
   integer, dimension(1:2) :: dim=[n1,n2]
   ! physical constants
    complex(8), parameter :: ci=(0.d0,1.d0)
@@ -25,8 +25,8 @@ program main
   real(8), parameter :: e0=hbar**2.d0/(m*l0**2.d0)   ! energy scale (ho correspondence)
   real(8), parameter :: ascat = 1010.0d0*a_bohr/l0 
   real(8), parameter :: nat = 1.d3 
-  real(8), parameter :: u = 4.d0*pi*nat*ascat
-  !real(8), parameter :: u = 1   ! Adimensional interaction
+  real(8), parameter :: u_real = 4.d0*pi*nat*ascat
+  real(8), parameter :: u = 1   ! Adimensional interaction
   !grid
   real(8), parameter, dimension(2) :: xmax=[30.d0,20.d0]
   real(8), parameter, dimension(2) :: xmin=-xmax
@@ -41,12 +41,12 @@ program main
   ! ground state
   real(8), parameter :: target_tol=1.d-8
   ! evolution
-  real(8), parameter :: t_evol = 200.0d0            ! ms total evolution time
+  real(8), parameter :: t_evol = 300.0d0            ! ms total evolution time
   real(8), parameter :: dt=0.05d-3                  ! ms (0.05d-3)
   integer, parameter :: shots=nint(t_evol)          ! saves every ms
   integer, parameter :: kmax=t_evol/dt
   real(8), parameter :: dwt=dt*1.d-3*e0/hbar
-  real(8), parameter :: t0 = 30.d0                  ! switch-off time of teh barrier
+  real(8), parameter :: t0 = 15.d0                  ! switch-off time of teh barrier
   real(8) :: t,factor
   !
   include 'fftw3.f03'
@@ -83,8 +83,11 @@ program main
    !call system('mkdir data/vel3')
    call system('mkdir data/FT-x')
    call system('mkdir data/FT-y')
+   call system('mkdir data/instability_regime')
 
    write(*,*) 
+   write(*,*) u_real, u
+   
 
   ! Create the initial state with the potential 
   call init_stat
