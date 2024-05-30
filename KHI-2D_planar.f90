@@ -25,8 +25,8 @@ program main
   real(8), parameter :: e0=hbar**2.d0/(m*l0**2.d0)   ! energy scale (ho correspondence)
   real(8), parameter :: ascat = 1010.0d0*a_bohr/l0 
   real(8), parameter :: nat = 1.d3 
-  real(8), parameter :: u_real = 4.d0*pi*nat*ascat
-  real(8), parameter :: u = 1   ! Adimensional interaction
+  !real(8), parameter :: u = 4.d0*pi*nat*ascat
+      ! Adimensional interaction
   !grid
   real(8), parameter, dimension(2) :: xmax=[30.d0,20.d0]
   real(8), parameter, dimension(2) :: xmin=-xmax
@@ -41,12 +41,13 @@ program main
   ! ground state
   real(8), parameter :: target_tol=1.d-8
   ! evolution
-  real(8), parameter :: t_evol = 300.0d0            ! ms total evolution time
+  real(8), parameter :: t_evol = 150.0d0            ! ms total evolution time
   real(8), parameter :: dt=0.05d-3                  ! ms (0.05d-3)
   integer, parameter :: shots=nint(t_evol)          ! saves every ms
   integer, parameter :: kmax=t_evol/dt
   real(8), parameter :: dwt=dt*1.d-3*e0/hbar
   real(8), parameter :: t0 = 15.d0                  ! switch-off time of teh barrier
+  real(8), parameter :: u = xmax(1)*xmax(2)*4.d0    ! interaction strength
   real(8) :: t,factor
   !
   include 'fftw3.f03'
@@ -86,7 +87,7 @@ program main
    call system('mkdir data/instability_regime')
 
    write(*,*) 
-   write(*,*) u_real, u
+   write(*,*) hbar / m * k0 
    
 
   ! Create the initial state with the potential 
@@ -634,7 +635,7 @@ contains
    do i1 = 1, n1
       do i2 = 1, n2
 
-         velocity_x_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*ci*dxpsi(i1,i2))/abs(psi(i1,i2))**2
+         velocity_x_2(i1,i2) = hbar / m * dimag(conjg(psi(i1,i2))*ci*dxpsi(i1,i2))/abs(psi(i1,i2))**2
          velocity_y_2(i1,i2) = 2 * dimag(conjg(psi(i1,i2))*dypsi(i1,i2))/abs(psi(i1,i2))**2
          write(26,'(2(2x,f10.4),2x,2(g16.4E3))') x1(i1), x2(i2), velocity_x_2(i1,i2), velocity_y_2(i1,i2)
       end do

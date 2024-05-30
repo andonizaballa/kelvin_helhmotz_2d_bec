@@ -20,25 +20,28 @@ def main():
     #create_images('vel2')
 
     #Create the images for the velocity profile
-    #plot_velocity_profile_allx()
+    plot_velocity_profile_allx()
 
     #Create the gif for density, phase, vel1 and vel2
     #
     #make_gif('dens')
     #make_gif('phase')
-    #make_gif('vel2')
+    make_gif('vel2')
 
     #Create the gif for the velocity profile
-    #gif_velocity_profile()
+    gif_velocity_profile()
 
     #Create the dataframe for the instability regime   
     #instablity_regime_df()
 
     #Plot the instability regime p_x vs t
-    plot_instability_regime_px_t()
+    #plot_instability_regime_px_t()
 
     #Plot the instability regime for all px values
-    plot_instability_allpx()
+    #plot_instability_allpx()
+
+    #Plot the barrier evolution
+    #barrier_evolution()
 
     #Change to folder
     os.chdir('..')
@@ -50,8 +53,8 @@ def create_images(folder_name):
 
     dict_folder = {'dens': 'density', 'phase': 'phase', 'vel1': 'vel1', 'vel2': 'vel2'}
 
-    dict_max = {'dens': 2E-3, 'phase': 2*np.pi, 'vel1': 0.5E-88, 'vel2': 2.5}
-    dict_min = {'dens': 1E-5, 'phase': 0, 'vel1': -0.5E-8, 'vel2': -2.5}
+    dict_max = {'dens': 6E-4, 'phase': 2*np.pi, 'vel1': 0.5E-88, 'vel2': 1E-8}
+    dict_min = {'dens': 0, 'phase': 0, 'vel1': -0.5E-8, 'vel2': -1E-8}
 
     max = dict_max[folder_name]
     min = dict_min[folder_name]
@@ -198,7 +201,7 @@ def plot_velocity_profile(xprof,file):
     plt.title('t = ' + str(time))
     plt.legend()
     plt.xlim(-17.5,17.5)
-    plt.ylim(-2.5,2.5)
+    plt.ylim(-1E-8,1E-8)
     #plt.title('Velocity in x direction vs y')
     plt.savefig('velocity_profile_x_'+ str(xprof)+'_'+str(file)+'.png')
     plt.figure().clear()
@@ -277,10 +280,10 @@ def plot_instability_regime_px_t():
 
     y_lim =max(instablity_regime_df['px'])
 
-    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 10,cmap = 'plasma', vmin= 1e7, vmax = 5e9)
+    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 10,cmap = 'plasma', vmin= 1e3, vmax = 5e4)
  
     plt.xlabel('Time ($t$)')
-    plt.xlim(0, 300)
+    plt.xlim(0, 150)
     plt.ylim(-3.5, 3.5)
     plt.ylabel('$p_x$', rotation = 0, y = 0.45) 
     #plt.yscale('log')
@@ -328,7 +331,7 @@ def plot_instability_regime_px(df, px):
     plt.plot(instablity_regime_df['t'], instablity_regime_df['psi_px'], linewidth = 1,  c = 'orangered' )
  
     plt.xlabel('Time ($t$)')
-    plt.xlim(0, 300)
+    plt.xlim(0, 150)
     plt.ylabel(r'$\tilde{n} (\bf{p_x}) $', rotation = 0, labelpad = 20) 
     plt.yscale('log')
     #plt.xscale('log')
@@ -367,6 +370,39 @@ def gif_velocity_profile():
     frame_one.save('velocity_profile.gif', format="GIF", append_images=frames, save_all=True, duration=100, loop=0)
     
     os.chdir('..')
+
+def barrier_evolution():
+
+    t, A = np.loadtxt('a_time.dat', unpack = True)
+
+    barrier_evolution_df = pd.DataFrame(columns = ['t', 'A'])
+
+    barrier_evolution_df['t'] = t
+    barrier_evolution_df['A'] = A
+
+    #Now t=15 will be the zero value in the time axis
+
+    t0 = 30
+
+    barrier_evolution_df['t'] = barrier_evolution_df['t'] - t0
+
+    figure_features()
+
+    fig = plt.figure()
+    aspect_ratio = 3
+    fig.set_size_inches(8, 8 / aspect_ratio)    
+
+    plt.plot(barrier_evolution_df['t'], barrier_evolution_df['A'], color='mediumblue')
+
+    plt.xlabel('Time ($t$)')
+    plt.ylabel('$A$', rotation = 0, labelpad = 20)
+    plt.xlim(-t0, 200-t0)
+    plt.title('Barrier evolution')
+    plt.savefig('barrier_evolution.png')
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
 
 
 
