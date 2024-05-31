@@ -6,6 +6,8 @@ import pandas as pd
 import glob
 from PIL import Image
 import matplotlib.animation as animation
+from scipy.constants import hbar
+import scipy.constants as sc
 
 from fig_config import (
     add_grid,
@@ -20,22 +22,22 @@ def main():
     #create_images('vel2')
 
     #Create the images for the velocity profile
-    plot_velocity_profile_allx()
+    #plot_velocity_profile_allx()
 
     #Create the gif for density, phase, vel1 and vel2
     #
     #make_gif('dens')
     #make_gif('phase')
-    make_gif('vel2')
+    #make_gif('vel2')
 
     #Create the gif for the velocity profile
-    gif_velocity_profile()
+    #gif_velocity_profile()
 
     #Create the dataframe for the instability regime   
     #instablity_regime_df()
 
     #Plot the instability regime p_x vs t
-    #plot_instability_regime_px_t()
+    plot_instability_regime_px_t()
 
     #Plot the instability regime for all px values
     #plot_instability_allpx()
@@ -46,7 +48,12 @@ def main():
     #Change to folder
     os.chdir('..')
 
-    
+def define_constants():
+    a_mu = sc.physical_constants['atomic mass constant'][0]
+    m = 12 * a_mu
+    v_lab = 0.2771E-008
+
+    return m, v_lab
 
 
 def create_images(folder_name):
@@ -201,7 +208,7 @@ def plot_velocity_profile(xprof,file):
     plt.title('t = ' + str(time))
     plt.legend()
     plt.xlim(-17.5,17.5)
-    plt.ylim(-1E-8,1E-8)
+    plt.ylim(-0.5E-8,0.5E-8)
     #plt.title('Velocity in x direction vs y')
     plt.savefig('velocity_profile_x_'+ str(xprof)+'_'+str(file)+'.png')
     plt.figure().clear()
@@ -267,7 +274,11 @@ def plot_instability_regime_px_t():
     #Plot the graph
     figure_features()
 
+    m, v_lab = define_constants()
 
+    k_lab = m * v_lab / hbar  
+
+    
 
 
     fig = plt.figure()
@@ -280,16 +291,19 @@ def plot_instability_regime_px_t():
 
     y_lim =max(instablity_regime_df['px'])
 
-    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 10,cmap = 'plasma', vmin= 1e3, vmax = 5e4)
- 
+    plt.scatter(instablity_regime_df['t'], instablity_regime_df['px'] ,c = abs(instablity_regime_df['psi_px'])**2 ,label = 'FT-x',s = 10,cmap = 'plasma', vmin= 1e3, vmax = 5e6)
+    plt.axhline(y = k_lab, color = 'red', linestyle = '--', lw = 1)
+    plt.axhline(y = -k_lab, color = 'red', linestyle = '--', lw = 1)
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 150)
     plt.ylim(-3.5, 3.5)
-    plt.ylabel('$p_x$', rotation = 0, y = 0.45) 
+
+
+    plt.ylabel('$k_x$', rotation = 0, y = 0.45) 
     #plt.yscale('log')
     #plt.xscale('log')
     cbar = plt.colorbar()
-    cbar.set_label(r'$\tilde{n} (p_x) $', rotation = 0)
+    cbar.set_label(r'$\tilde{n} (k_x) $', rotation = 0)
     #plt.legend(loc = 'upper right')
     #plt.title('Dynamical (modulational) instability (FT-x)')
     plt.savefig('instability_regime_t_vs_px.png')
@@ -332,7 +346,7 @@ def plot_instability_regime_px(df, px):
  
     plt.xlabel('Time ($t$)')
     plt.xlim(0, 150)
-    plt.ylabel(r'$\tilde{n} (\bf{p_x}) $', rotation = 0, labelpad = 20) 
+    plt.ylabel(r'$\tilde{n} (\bf{k_x}) $', rotation = 0, labelpad = 20) 
     plt.yscale('log')
     #plt.xscale('log')
     #plt.legend(loc = 'upper right')
