@@ -356,9 +356,7 @@ def plot_instability_regime_px(df, px):
     plt.close()
     plt.cla()
     plt.clf()
-
-
-
+    
 def plot_instability_allpx():
 
     instablity_regime_df = pd.read_csv('instability_regime.csv')
@@ -417,8 +415,6 @@ def barrier_evolution():
     plt.close()
     plt.cla()
     plt.clf()
-
-
 
 
 if __name__ == '__main__':
