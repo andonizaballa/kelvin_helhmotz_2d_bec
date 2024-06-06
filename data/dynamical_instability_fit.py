@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from scipy.optimize import curve_fit
 import scipy.constants as sc
+from scipy.constants import hbar
 import cmath
 from scipy.constants import hbar
 
@@ -24,13 +25,11 @@ def main():
 
     delta_fit = plot_velocity_profile(0,'vel2-015.dat')
 
-    # Now we will fit the exponential growth for each px value
-
-    #px_fit = fit_all_the_px(time,instablity_regime_df)
-
     # Now we will plot the fit
 
     plot_fit(p_x_fit,instablity_regime_df, delta_fit)
+
+    #plot_khi(instablity_regime_df, delta_fit)
 
 
 def import_csv(name):
@@ -90,11 +89,13 @@ def plot_fit(px_fit,instablity_regime_df, delta_fit):
     b = px_fit[2::3]
 
 
-    #plt.plot(px, a, 'o', color = 'darkgreen')
-    omega_t = np.imag(im_omega_kh(delta_fit[1], delta_fit[0], px))
-    plt.plot(px, omega_t, '--')
+    plt.plot(px, a, 'o', color = 'darkgreen')
+    #omega_t = np.imag(im_omega_kh(delta_fit[1], delta_fit[0], px))
+    #plt.plot(px, omega_t, '--')
     plt.xlabel('$k_x$')
     plt.ylabel(r'$\sigma_{m} \over \sigma^*$', rotation = 0, labelpad = 20)
+    plt.ylim(-0.5,2)
+    plt.xlim(0, np.max(px))
     # Save the plot
 
     plt.savefig('fit.png', dpi = 300)
@@ -105,11 +106,12 @@ def plot_fit(px_fit,instablity_regime_df, delta_fit):
     plt.cla()
     plt.clf()
 
-def im_omega_kh(delta, deltav, k):
+def im_omega_kh(delta, v, k):
     vec = np.array([])
     for kx in k:
-        vec = np.append(vec, deltav / (4 * delta) * cmath.sqrt(np.exp(-4 * kx * delta) - (2 * kx * delta - 1)**2))
+        vec =np.append(vec, 2*v / (4 * delta) * np.sqrt(- np.exp(-4 * kx * delta) + (2 * kx * delta - 1)**2) )
     return  vec
+
 
 def extract_number(filename):
     # Regular expression to match the numerical part of the file name
@@ -240,7 +242,23 @@ def plot_instability_allpx(instablity_regime_df, time_df):
     return p_x_fit
 
 
+def plot_khi(instability_regime_df, delta_fit):
+    a_mu = sc.physical_constants['atomic mass constant'][0]
+    m = 12 * a_mu
+    v_lab = delta_fit[0]
 
 
+    k_h = m * delta_fit[0] / hbar - instability_regime_df['px'].unique()
+    plt.plot(k_h, im_omega_kh(delta_fit[1], delta_fit[0],k_h), linewidth = 1.5,  c = 'olive', label = r'$\delta = $' + str(delta_fit[1]) + ' \n  $v_{lab} = $' + str(v_lab))
+    plt.legend()
+    plt.savefig('khi.png', dpi = 300)
+    #plt.show()
+
+
+    #Close the plot
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
 if __name__ == "__main__":
     main()
