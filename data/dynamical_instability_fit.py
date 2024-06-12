@@ -88,14 +88,37 @@ def plot_fit(px_fit,instablity_regime_df, delta_fit):
     a = px_fit[1::3]
     b = px_fit[2::3]
 
-
+    a_maximum = np.max(a)
     plt.plot(px, a, 'o', color = 'darkgreen')
     #omega_t = np.imag(im_omega_kh(delta_fit[1], delta_fit[0], px))
     #plt.plot(px, omega_t, '--')
     plt.xlabel('$k_x$')
-    plt.ylabel(r'$\sigma_{m} \over \sigma^*$', rotation = 0, labelpad = 20)
-    plt.ylim(-0.5,2)
-    plt.xlim(0, np.max(px))
+    plt.ylabel(r'$\sigma_{m}$', rotation = 0, labelpad = 20)
+    #plt.ylim(-0.5,2)
+
+    a_mu = sc.physical_constants['atomic mass constant'][0]
+    m = 12 * a_mu
+
+    v_lab= 0.2271e-8
+
+    delta = 0.0983
+
+    x_0 = 0.6392/delta
+
+    x_0_2 = m * v_lab / hbar - x_0
+
+    k_h = np.linspace(0, 6.5, 10000)
+
+
+    #We will define the maximum cvalue of the function in order to have it normalized.
+    a_max = v_lab / 2 * im_omega_kh(delta, 4.5)
+
+    #plt.axvline(x =   x_0_2 , color='g', linestyle='--', linewidth = 1)
+    plt.axhline(y=0, color='k', linestyle='-', linewidth = 0.7)
+    plt.axvline(x=0, color='k', linestyle='-', linewidth = 0.7)
+
+    plt.plot(k_h, v_lab/(2 * a_max) * im_omega_kh(delta, k_h), linewidth = 1.5,  c = 'darkviolet', ls= '-', label = r'$Im(\omega_{KH}(\frac{M}{h}v - K ))$')
+    plt.ylim(-0.5,3)
     # Save the plot
 
     plt.savefig('fit.png', dpi = 300)
@@ -106,11 +129,9 @@ def plot_fit(px_fit,instablity_regime_df, delta_fit):
     plt.cla()
     plt.clf()
 
-def im_omega_kh(delta, v, k):
-    vec = np.array([])
-    for kx in k:
-        vec =np.append(vec, 2*v / (4 * delta) * np.sqrt(- np.exp(-4 * kx * delta) + (2 * kx * delta - 1)**2) )
-    return  vec
+def im_omega_kh(delta, kx):
+    return  1/(2*delta) * np.sqrt (np.exp(-4 * kx * delta ) - (2 * kx * delta - 1)**2) 
+
 
 
 def extract_number(filename):
