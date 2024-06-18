@@ -37,7 +37,7 @@ def figure_features(tex=True, font="palatino", dpi=180):
             "ytick.minor.size": 2.25,
             "xtick.labelsize": 16,
             "ytick.labelsize": 16,
-            "legend.fontsize": 16,
+            "legend.fontsize": 12,
             "legend.framealpha": 1,
             "figure.titlesize": 16,
             "lines.linewidth": 2,

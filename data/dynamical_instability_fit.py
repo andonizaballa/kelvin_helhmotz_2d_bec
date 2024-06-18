@@ -21,13 +21,13 @@ def main():
 
     # First we will show the graph that we want to fit the exponential growth
 
-    p_x_fit = plot_instability_allpx(instablity_regime_df,time_df)
+    p_x_fit_df = plot_instability_allpx(instablity_regime_df,time_df)
 
     delta_fit = plot_velocity_profile(0,'vel2-015.dat')
 
     # Now we will plot the fit
 
-    plot_fit(p_x_fit,instablity_regime_df, delta_fit)
+    plot_fit(p_x_fit_df,instablity_regime_df, delta_fit)
 
     #plot_khi(instablity_regime_df, delta_fit)
 
@@ -56,15 +56,11 @@ def fit_exponential_growth(t0,t1,px,instablity_regime_df):
 
     popt, pcov = curve_fit(linear, t, np.log(n_kx))
 
-    return popt
+    return popt, pcov
 
 def fit_all_the_px(time,instablity_regime_df):
 
-    px_fit = np.array([])
-
-    p_x = time[0::3]
-    t0 = time[1::3]
-    t1 = time[2::3]
+    px_fit_df = pd.DataFrame(columns = ['px', 'a', 'b', 'psi_t60'])
 
     for px in p_x:
         popt = fit_exponential_growth(t0,t1,px,instablity_regime_df)
@@ -73,61 +69,99 @@ def fit_all_the_px(time,instablity_regime_df):
 
         #if popt[1] < 1 + 1e-4 and popt[1] > 1 - 1e-4:
             #continue
-        px_fit = np.append(px_fit, [px, popt[0], popt[1]])
 
-    return px_fit
+        # We will the value of psi_px at t=60 from the dataframe
 
-def plot_fit(px_fit,instablity_regime_df, delta_fit):
+        psi_t60 = instablity_regime_df[instablity_regime_df['px'] == px]['psi_px'].values[-1]
+
+        px_fit_df = px_fit_df.append({'px': px, 'a': popt[0], 'b': popt[1], 'psi_t60': psi_t60}, ignore_index = True)
+        print(px_fit_df)
+    return px_fit_df
+
+def plot_fit(px_fit_df,instablity_regime_df, delta_fit):
 
     figure_features()
 
     # We will take tha a
     #a_max = fit_exponential_growth(0,instablity_regime_df)[0]
 
-    px = px_fit[0::3]
-    a = px_fit[1::3]
-    b = px_fit[2::3]
+    #only positive or cero values of px
 
-    a_maximum = np.max(a)
-    plt.plot(px, a, 'o', color = 'darkgreen')
-    #omega_t = np.imag(im_omega_kh(delta_fit[1], delta_fit[0], px))
-    #plt.plot(px, omega_t, '--')
-    plt.xlabel('$k_x$')
-    plt.ylabel(r'$\sigma_{m}$', rotation = 0, labelpad = 20)
-    #plt.ylim(-0.5,2)
+    px_fit_df = px_fit_df[px_fit_df['px'] >= 0]
 
-    a_mu = sc.physical_constants['atomic mass constant'][0]
-    m = 12 * a_mu
+    #We will divide the values in px_fit_df in three categories low, medium and high
+    px_low_df = px_fit_df[px_fit_df['psi_t60'] < 1e-5]
+    px_medium_df = px_fit_df[(px_fit_df['psi_t60'] >= 1e-5) & (px_fit_df['psi_t60'] < 1e-1)]
+    px_high_df = px_fit_df[px_fit_df['psi_t60'] >= 1e-1]
 
-    v_lab= 0.2271e-8
+    #Now we plot them. We will make three different plots, one for each category
 
-    delta = 0.0983
+    #Low values of psi_t60
 
-    x_0 = 0.6392/delta
+    fig, axs = plt.subplots(4, 1, figsize=(8, 10), sharey=True)
 
-    x_0_2 = m * v_lab / hbar - x_0
+    #now we will plot the points with the error bars
 
-    k_h = np.linspace(0, 6.5, 10000)
+    axs[0].errorbar(px_low_df['px'], px_low_df['a'], yerr = px_low_df['error_a'], fmt = 'o', label = 'Low values of $\psi_{t=60}$', c = 'steelblue', ecolor='lightgray', elinewidth=3, markersize = 5)
+    axs[1].errorbar(px_medium_df['px'], px_medium_df['a'], yerr = px_medium_df['error_a'], fmt = 'o', label = 'Medium values of $\psi_{t=60}$', c = 'orangered', ecolor='lightgray', elinewidth=3, markersize = 5)
+    axs[2].errorbar(px_high_df['px'], px_high_df['a'], yerr = px_high_df['error_a'], fmt = 'o', label = 'High values of $\psi_{t=60}$',c = 'olivedrab', ecolor='lightgray', elinewidth=3, markersize = 5)
 
+    axs[3].errorbar(px_low_df['px'], px_low_df['a'], yerr = px_low_df['error_a'], fmt = 'o', c = 'steelblue', ecolor='lightgray', elinewidth=3, markersize = 5)
+    axs[3].errorbar(px_medium_df['px'], px_medium_df['a'], yerr = px_medium_df['error_a'], fmt = 'o', c = 'orangered', ecolor='lightgray', elinewidth=3, markersize = 5)
+    axs[3].errorbar(px_high_df['px'], px_high_df['a'], yerr = px_high_df['error_a'], fmt = 'o',c = 'olivedrab', ecolor='lightgray', elinewidth=3, markersize = 5)
+    # Labels fro the x and y axis
 
-    #We will define the maximum cvalue of the function in order to have it normalized.
-    a_max = v_lab / 2 * im_omega_kh(delta, 4.5)
+    axs[0].set_ylabel('$\sigma_m$' , rotation = 0, labelpad = 20)
+    axs[1].set_ylabel('$\sigma_m$', rotation = 0, labelpad = 20)
+    axs[2].set_ylabel('$\sigma_m$', rotation = 0, labelpad = 20)
+    axs[3].set_ylabel('$\sigma_m$', rotation = 0, labelpad = 20)
 
-    #plt.axvline(x =   x_0_2 , color='g', linestyle='--', linewidth = 1)
-    plt.axhline(y=0, color='k', linestyle='-', linewidth = 0.7)
-    plt.axvline(x=0, color='k', linestyle='-', linewidth = 0.7)
+    axs[3].set_xlabel('$k_x$')
 
-    plt.plot(k_h, v_lab/(2 * a_max) * im_omega_kh(delta, k_h), linewidth = 1.5,  c = 'darkviolet', ls= '-', label = r'$Im(\omega_{KH}(\frac{M}{h}v - K ))$')
-    plt.ylim(-0.5,3)
-    # Save the plot
+    #Legends 
 
-    plt.savefig('fit.png', dpi = 300)
+    axs[0].legend(frameon = False, loc = 'upper right')
+    axs[1].legend(frameon = False, loc = 'upper right')
+    axs[2].legend(frameon = False, loc = 'upper right')
+
+    # Save the figure in this folder
+
+    fig.savefig('fit_classified.png', dpi = 300)
 
     #Close the plot
     plt.figure().clear()
     plt.close()
     plt.cla()
     plt.clf()
+
+    # Now we plot all the data in the same graph
+
+    figure_features()
+
+    fig = plt.figure( figsize=(8, 10))
+
+    # Aspect ratio
+
+    aspect_ratio = 1.6168
+    fig.set_size_inches(8, 8 / aspect_ratio)
+
+    #plt.errorbar(px_low_df['px'], px_low_df['a'], yerr = px_low_df['error_a'], fmt = 'o', label = 'Low values of $\psi_{t=60}$', c = 'steelblue', ecolor='lightgray', elinewidth=3, markersize = 5)
+    #plt.errorbar(px_medium_df['px'], px_medium_df['a'], yerr = px_medium_df['error_a'], fmt = 'o', label = 'Medium values of $\psi_{t=60}$', c = 'orangered', ecolor='lightgray', elinewidth=3, markersize = 5)
+    #plt.errorbar(px_high_df['px'], px_high_df['a'], yerr = px_high_df['error_a'], fmt = 'o', label = 'High values of $\psi_{t=60}$',c = 'olivedrab', ecolor='lightgray', elinewidth=3, markersize = 5)
+    plt.errorbar(px_fit_df['px'], px_fit_df['a'], yerr = px_fit_df['error_a'], fmt = 'o', label = 'All values of $\psi_{t=60}$',c = 'crimson', ecolor='lightgray', elinewidth=3, markersize = 5)
+    plt.ylabel('$\sigma_m$' , rotation = 0, labelpad = 20)
+    plt.xlabel('$k_x$')
+
+    #plt.legend(frameon = False, loc = 'upper right')
+
+    plt.savefig('fit_all.png', dpi = 300)
+
+    #Close the plot
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+
 
 def im_omega_kh(delta, kx):
     return  1/(2*delta) * np.sqrt (np.exp(-4 * kx * delta ) - (2 * kx * delta - 1)**2) 
@@ -218,7 +252,7 @@ def plot_instability_regime_px(t0,t1,df, px):
     
 
 
-    popt = fit_exponential_growth(t0,t1,px,instablity_regime_df)
+    popt, pcov = fit_exponential_growth(t0,t1,px,instablity_regime_df)
 
     instablity_regime_df = instablity_regime_df[instablity_regime_df['px'] == px]
     plt.plot(instablity_regime_df['t'], instablity_regime_df['psi_px'], linewidth = 1,  c = 'orangered' )
@@ -250,17 +284,20 @@ def plot_instability_regime_px(t0,t1,df, px):
 
     os.chdir('..')
 
-    return popt
+    return popt, pcov
     
 def plot_instability_allpx(instablity_regime_df, time_df):
 
-    p_x_fit = np.array([])
+    p_x_fit_df = pd.DataFrame(columns = ['px', 'a', 'b', 'psi_t60', 'error_a', 'error_b'])
     for px in instablity_regime_df['px'].unique():
         t0 = time_df[time_df['px'] == px]['t0'].values[0]
         t1 = time_df[time_df['px'] == px]['t1'].values[0]
-        popt = plot_instability_regime_px(t0,t1,instablity_regime_df, px)
-        p_x_fit = np.append(p_x_fit, [px, popt[0], popt[1]])
-    return p_x_fit
+        popt, pcov = plot_instability_regime_px(t0,t1,instablity_regime_df, px)
+        psi_t60 = instablity_regime_df[instablity_regime_df['px'] == px]['psi_px'].values[-1]
+        errora = np.sqrt(pcov[0][0])
+        errorb = np.sqrt(pcov[1][1])
+        p_x_fit_df.loc[len(p_x_fit_df.index)] = [px, popt[0], popt[1], psi_t60, errora, errorb]
+    return p_x_fit_df
 
 
 def plot_khi(instability_regime_df, delta_fit):

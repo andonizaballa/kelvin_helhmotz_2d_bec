@@ -666,7 +666,9 @@ contains
 
    open(unit=43,file="data/FT-x/FT-x-"//number//".dat",status='unknown')
    open(unit=44,file="data/FT-y/FT-y-"//number//".dat",status='unknown')
-   
+   open(unit=45,file="data/FT-xtry/FT-y-"//number//".dat",status='unknown')
+   open(unit=46,file="data/FT-ytry/FT-y-"//number//".dat",status='unknown')
+
     ! FT along the longitudinal and transverse direction
     in = psi
     call fft_transform(forth)
@@ -674,12 +676,14 @@ contains
     do i1 =1, n1
        write(41,'(2(2x,f10.4),2x,g16.4E3)') t, p1(i1), sum(abs(out(i1,:))**2.)
        write(43,'(2(2x,f10.4),2x,g16.4E3)') t, p1(i1), sum(abs(out(i1,:))**2.)
+       write(45,'(2(2x,f10.4),2x,g16.4E3)') t, p1(i1), dp(i1)*sum(abs(out(i1,:))**2.)
     end do
     write(41,*)
 
      do i2 =1, n2
        write(42,'(2(2x,f10.4),2x,g16.4E3)') t, p2(i2), sum(abs(out(:,i2))**2.)
        write(44,'(2(2x,f10.4),2x,g16.4E3)') t, p2(i2), sum(abs(out(:,i2))**2.)
+       write(46,'(2(2x,f10.4),2x,g16.4E3)') t, p2(i2), dp(i2)*sum(abs(out(:,i2))**2.)
     end do
     write(42,*)
 
